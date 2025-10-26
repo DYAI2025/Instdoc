@@ -14,8 +14,29 @@ jobs:
       - name: Validate manifest JSON
         run: python3 -m json.tool manifest.json > /dev/null
 
-      - name: Check Chrome manifest requirements
-        run: npx --yes chrome-manifest-validator manifest.json
+      - name: Verify manifest keys
+        run: |
+          python3 - <<'PY'
+          import json
+          import sys
+
+          path = 'manifest.json'
+          with open(path, 'r', encoding='utf-8') as fh:
+            data = json.load(fh)
+
+          required = ['manifest_version', 'name', 'version']
+          missing = [key for key in required if key not in data]
+          if missing:
+            sys.exit(f"Missing required manifest keys: {', '.join(missing)}")
+
+          if data.get('manifest_version') != 3:
+            sys.exit('manifest_version must be 3 for Manifest V3 extensions')
+
+          if 'background' not in data or 'service_worker' not in data['background']:
+            sys.exit('background.service_worker must be defined')
+
+          print('Manifest structure looks valid.')
+          PY
 
       - name: Check JavaScript syntax
         shell: bash
