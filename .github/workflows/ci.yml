@@ -32,7 +32,8 @@ jobs:
           if data.get('manifest_version') != 3:
             sys.exit('manifest_version must be 3 for Manifest V3 extensions')
 
-          if 'background' not in data or 'service_worker' not in data['background']:
+          background = data.get('background') or {}
+          if 'service_worker' not in background:
             sys.exit('background.service_worker must be defined')
 
           print('Manifest structure looks valid.')
@@ -42,7 +43,12 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          for file in service-worker.js content.js popup.js options.js background.js; do
+          files=$(git ls-files '*.js')
+          if [ -z "$files" ]; then
+            echo 'No JavaScript files tracked.'
+            exit 0
+          fi
+          for file in $files; do
             echo "Checking $file"
             node --check "$file"
           done
