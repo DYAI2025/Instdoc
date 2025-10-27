@@ -5,9 +5,13 @@ class InstantFile {
   constructor() {
     this.stats = {
       totalFiles: 0,
+      todayFiles: 0,
+      todaysDate: '',
       lastFile: '',
       lastTimestamp: null
     };
+    this.contextMenuListenerRegistered = false;
+    this.onContextMenuClicked = this.onContextMenuClicked.bind(this);
     this.init();
   }
 
@@ -23,7 +27,7 @@ class InstantFile {
     // Load stats
     await this.loadStats();
     
-    console.log('âš¡ InstantFile initialized');
+    console.log('\u26A1 InstantFile initialized');
   }
 
   async loadSettings() {
@@ -34,17 +38,24 @@ class InstantFile {
       organizeByType: true,
       showNotifications: true,
       playSound: false,
-      autoDetectType: true
+      autoDetectType: true,
+      enableContextMenu: true,
+      showFloatingButton: true,
+      buttonPosition: 'bottom-right',
+      autoHideButton: true,
+      selectionThreshold: 10,
+      enableSmartDetection: true
     };
 
-    const stored = await chrome.storage.sync.get(defaults);
-    return { ...defaults, ...stored };
+    const stored = await chrome.storage.sync.get(null);
+    this.settings = { ...defaults, ...stored };
+    return this.settings;
   }
 
   async loadStats() {
     const stored = await chrome.storage.local.get(['stats']);
     if (stored.stats) {
-      this.stats = stored.stats;
+      this.stats = { ...this.stats, ...stored.stats };
     }
   }
 
@@ -55,18 +66,27 @@ class InstantFile {
   setupContextMenus() {
     // Remove existing menus
     chrome.contextMenus.removeAll(() => {
+      if (chrome.runtime.lastError) {
+        console.warn('Context menu cleanup warning:', chrome.runtime.lastError.message);
+      }
+
+      if (!this.settings.enableContextMenu) {
+        return;
+      }
+
       const fileTypes = [
-        { id: 'auto', title: 'âš¡ Auto-detect & Save', icon: 'âš¡' },
-        { id: 'txt', title: 'ðŸ“„ Save as .txt', icon: 'ðŸ“„' },
-        { id: 'md', title: 'ðŸ“ Save as .md', icon: 'ðŸ“' },
-        { id: 'yaml', title: 'âš™ï¸ Save as .yaml', icon: 'âš™ï¸' },
-        { id: 'py', title: 'ðŸ Save as .py', icon: 'ðŸ' }
+        { id: 'auto', title: '\u26A1 Auto-detect & Save' },
+        { id: 'txt', title: '\uD83D\uDCC4 Save as .txt' },
+        { id: 'md', title: '\uD83D\uDCDD Save as .md' },
+        { id: 'yaml', title: '\u2699\uFE0F Save as .yaml' },
+        { id: 'py', title: '\uD83D\uDC0D Save as .py' },
+        { id: 'label', title: '\uD83C\uDFF7\uFE0F Label 89\u00D728 mm (PDF)' }
       ];
 
       // Parent menu
       chrome.contextMenus.create({
         id: 'instant-file-parent',
-        title: 'âš¡ InstantFile',
+        title: '\u26A1 InstantFile',
         contexts: ['selection']
       });
 
@@ -81,84 +101,132 @@ class InstantFile {
       });
     });
 
-    // Handle clicks
-    chrome.contextMenus.onClicked.addListener((info, tab) => {
-      if (info.menuItemId.startsWith('instant-')) {
-        const type = info.menuItemId.replace('instant-', '');
-        this.handleSave(info.selectionText, type, tab);
-      }
-    });
+    if (!this.contextMenuListenerRegistered) {
+      chrome.contextMenus.onClicked.addListener(this.onContextMenuClicked);
+      this.contextMenuListenerRegistered = true;
+    }
   }
 
   setupCommandListeners() {
+    const commandMap = {
+      'save-smart': 'auto',
+      'save-txt': 'txt',
+      'save-md': 'md',
+      'save-pdf': 'pdf'
+    };
+
     chrome.commands.onCommand.addListener((command) => {
-      if (command.startsWith('save-as-')) {
-        const type = command.replace('save-as-', '');
-        this.getSelectionAndSave(type);
-      }
+      const type = commandMap[command];
+      if (!type) return;
+      this.getSelectionAndSave(type).catch((error) => {
+        console.error('Command save failed:', error);
+      });
     });
   }
 
   setupMessageListeners() {
     chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
       if (message.action === 'saveContent') {
-        this.handleSave(message.content, message.type, sender.tab);
-        sendResponse({ success: true });
+        this.handleSave(message.content, message.type, sender.tab)
+          .then((result) => sendResponse({ success: true, result }))
+          .catch((error) => {
+            const messageText = error instanceof Error ? error.message : String(error);
+            sendResponse({ success: false, error: messageText });
+          });
+        return true;
       } else if (message.action === 'getStats') {
         sendResponse({ stats: this.stats });
       } else if (message.action === 'getSettings') {
         sendResponse({ settings: this.settings });
+      } else if (message.action === 'refreshSettings') {
+        this.loadSettings()
+          .then(() => {
+            this.setupContextMenus();
+            sendResponse({ success: true });
+          })
+          .catch((error) => {
+            console.error('Settings refresh failed:', error);
+            const messageText = error instanceof Error ? error.message : String(error);
+            sendResponse({ success: false, error: messageText });
+          });
+        return true;
       }
       return true;
+    });
+  }
+
+  onContextMenuClicked(info, tab) {
+    if (!info.menuItemId || !info.menuItemId.startsWith('instant-')) return;
+
+    const type = info.menuItemId.replace('instant-', '');
+    this.handleSave(info.selectionText, type, tab).catch((error) => {
+      console.error('Context menu save failed:', error);
     });
   }
 
   async getSelectionAndSave(type) {
     try {
       const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
-      
-      const results = await chrome.scripting.executeScript({
+      if (!tab || !tab.id) {
+        const error = new Error('No active tab');
+        error.handled = true;
+        this.showNotification('\u274C No active tab', 'error');
+        throw error;
+      }
+
+      const [selection] = await chrome.scripting.executeScript({
         target: { tabId: tab.id },
         func: () => window.getSelection().toString()
       });
 
-      if (results && results[0] && results[0].result) {
-        await this.handleSave(results[0].result, type, tab);
+      if (selection && selection.result && selection.result.trim()) {
+        await this.handleSave(selection.result, type, tab);
+      } else {
+        const error = new Error('No text selected');
+        error.handled = true;
+        this.showNotification('\u274C No text selected', 'error');
+        throw error;
       }
     } catch (error) {
       console.error('Error getting selection:', error);
-      this.showNotification('âŒ No text selected', 'error');
+      if (!error || !error.handled) {
+        this.showNotification('\u274C No text selected', 'error');
+      }
     }
   }
 
   async handleSave(content, type, tab) {
     if (!content || content.trim().length === 0) {
-      this.showNotification('âŒ No content to save', 'error');
-      return;
+      const error = new Error('No content to save');
+      error.handled = true;
+      this.showNotification('\u274C No content to save', 'error');
+      throw error;
     }
 
     try {
       // Auto-detect if requested
-      if (type === 'auto' && this.settings.autoDetectType) {
-        type = this.detectContentType(content);
+      let targetType = type;
+      if (targetType === 'auto') {
+        targetType = this.settings.autoDetectType
+          ? this.detectContentType(content)
+          : 'txt';
       }
 
       // Generate filename
-      const filename = this.generateFilename(content, type, tab);
+      const filename = this.generateFilename(content, targetType, tab);
       
       // Create file path with optional type organization
       let filepath = this.settings.folderPath;
       if (this.settings.organizeByType) {
-        filepath += `${type}/`;
+        filepath += `${targetType}/`;
       }
       filepath += filename;
 
-      // Create blob and download
-      const blob = this.createBlob(content, type);
-      const url = URL.createObjectURL(blob);
+      const { blob, mimeType } = this.createBlob(content, targetType);
+      const { url, revoke } = await this.prepareDownloadUrl(blob, mimeType);
 
       const downloadId = await chrome.downloads.download({
-        url: url,
+        url,
         filename: filepath,
         saveAs: false,
         conflictAction: 'uniquify'
@@ -166,27 +234,39 @@ class InstantFile {
 
       // Update stats
       this.stats.totalFiles++;
+      const now = new Date();
+      const todayKey = now.toISOString().slice(0, 10);
+      if (this.stats.todaysDate !== todayKey) {
+        this.stats.todaysDate = todayKey;
+        this.stats.todayFiles = 0;
+      }
+      this.stats.todayFiles++;
       this.stats.lastFile = filename;
-      this.stats.lastTimestamp = Date.now();
+      this.stats.lastTimestamp = now.getTime();
       await this.saveStats();
 
       // Show success notification
       if (this.settings.showNotifications) {
-        this.showNotification(`âœ¨ ${filename} created!`);
+        this.showNotification(`\u2728 ${filename} created!`);
       }
 
       // Cleanup
-      setTimeout(() => URL.revokeObjectURL(url), 1000);
+      setTimeout(() => revoke(), 1000);
 
-      console.log(`âœ… File saved: ${filepath}`);
+      console.log(`\u2705 File saved: ${filepath}`);
+      return { filename, downloadId, type: targetType };
 
     } catch (error) {
-      console.error('Error saving file:', error);
-      this.showNotification(`âŒ Error: ${error.message}`, 'error');
+      const failure = error instanceof Error ? error : new Error(String(error));
+      console.error('Error saving file:', failure);
+      this.showNotification(`\u274C Error: ${failure.message}`, 'error');
+      failure.handled = true;
+      throw failure;
     }
   }
 
   generateFilename(content, extension, tab) {
+    const fileExtension = extension === 'label' ? 'pdf' : extension;
     const timestamp = new Date().toISOString()
       .replace(/[:.]/g, '-')
       .replace('T', '_')
@@ -202,8 +282,8 @@ class InstantFile {
           .trim();
         
         return firstLine && firstLine.length > 3
-          ? `${firstLine}.${extension}`
-          : `instant_${timestamp}.${extension}`;
+          ? `${firstLine}.${fileExtension}`
+          : `instant_${timestamp}.${fileExtension}`;
       }
 
       case 'custom': {
@@ -211,16 +291,21 @@ class InstantFile {
           .replace('{date}', timestamp.split('_')[0])
           .replace('{time}', timestamp.split('_')[1])
           .replace('{type}', extension);
-        return `${pattern}.${extension}`;
+        return `${pattern}.${fileExtension}`;
       }
 
       case 'timestamp':
       default:
-        return `instant_${timestamp}.${extension}`;
+        return `instant_${timestamp}.${fileExtension}`;
     }
   }
 
   createBlob(content, extension) {
+    if (extension === 'pdf') {
+      const pdfBlob = this.createPdfBlob(content);
+      return { blob: pdfBlob, mimeType: 'application/pdf' };
+    }
+
     const mimeTypes = {
       'txt': 'text/plain;charset=utf-8',
       'md': 'text/markdown;charset=utf-8',
@@ -229,11 +314,227 @@ class InstantFile {
       'js': 'text/javascript;charset=utf-8',
       'json': 'application/json;charset=utf-8',
       'html': 'text/html;charset=utf-8',
-      'css': 'text/css;charset=utf-8'
+      'css': 'text/css;charset=utf-8',
+      'csv': 'text/csv;charset=utf-8',
+      'url': 'text/plain;charset=utf-8'
     };
 
+    if (extension === 'label') {
+      const labelBlob = this.createLabelPdf(content);
+      return { blob: labelBlob, mimeType: 'application/pdf' };
+    }
+
     const mimeType = mimeTypes[extension] || 'text/plain;charset=utf-8';
-    return new Blob([content], { type: mimeType });
+    return { blob: new Blob([content], { type: mimeType }), mimeType };
+  }
+
+  async prepareDownloadUrl(blob, mimeType) {
+    const supportsObjectUrl = globalThis.URL && typeof globalThis.URL.createObjectURL === 'function';
+    if (supportsObjectUrl) {
+      const objectUrl = URL.createObjectURL(blob);
+      return {
+        url: objectUrl,
+        revoke: () => URL.revokeObjectURL(objectUrl)
+      };
+    }
+
+    const buffer = await blob.arrayBuffer();
+    const bytes = new Uint8Array(buffer);
+    const chunkSize = 0x8000;
+    const binaryChunks = [];
+    for (let i = 0; i < bytes.length; i += chunkSize) {
+      const chunk = bytes.subarray(i, Math.min(i + chunkSize, bytes.length));
+      binaryChunks.push(String.fromCharCode.apply(null, chunk));
+    }
+
+    const base64 = btoa(binaryChunks.join(''));
+    return {
+      url: `data:${mimeType};base64,${base64}`,
+      revoke: () => {}
+    };
+  }
+
+  createPdfBlob(content) {
+    const encoder = new TextEncoder();
+    const sanitized = content
+      .replace(/\r\n/g, '\n')
+      .split('\n')
+      .slice(0, 120)
+      .map(line => line.substring(0, 120).replace(/[()\\]/g, '\\$&'));
+
+    let stream = 'BT\n/F1 12 Tf\n50 780 Td\n';
+    sanitized.forEach((line, index) => {
+      if (index > 0) {
+        stream += '0 -14 Td\n';
+      }
+      stream += `(${line || ' '}) Tj\n`;
+    });
+    stream += 'ET';
+
+    const chunks = [];
+    let offset = 0;
+    const offsets = [0];
+
+    const push = (text) => {
+      const bytes = encoder.encode(text);
+      chunks.push(bytes);
+      offset += bytes.length;
+    };
+
+    const pushObject = (id, body) => {
+      offsets.push(offset);
+      push(`${id} 0 obj\n${body}\nendobj\n`);
+    };
+
+    push('%PDF-1.4\n');
+    pushObject(1, '<< /Type /Catalog /Pages 2 0 R >>');
+    pushObject(2, '<< /Type /Pages /Kids [3 0 R] /Count 1 >>');
+    pushObject(3, '<< /Type /Page /Parent 2 0 R /MediaBox [0 0 612 792] /Contents 4 0 R /Resources << /Font << /F1 5 0 R >> >> >>');
+
+    const streamBytes = encoder.encode(stream);
+    pushObject(4, `<< /Length ${streamBytes.length} >>\nstream\n${stream}\nendstream`);
+    pushObject(5, '<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>');
+
+    const xrefOffset = offset;
+    push('xref\n');
+    push(`0 ${offsets.length}\n`);
+    push('0000000000 65535 f \n');
+    offsets.slice(1).forEach((value) => {
+      push(`${value.toString().padStart(10, '0')} 00000 n \n`);
+    });
+
+    push('trailer\n');
+    push(`<< /Size ${offsets.length} /Root 1 0 R >>\n`);
+    push('startxref\n');
+    push(`${xrefOffset}\n`);
+    push('%%EOF\n');
+
+    return new Blob(chunks, { type: 'application/pdf' });
+  }
+
+  createLabelPdf(content) {
+    const MM_TO_PT = 72 / 25.4;
+    const width = 89 * MM_TO_PT;
+    const height = 28 * MM_TO_PT;
+    const marginX = 12;
+    const marginY = 8;
+    const maxLines = 4;
+    const lineHeightFactor = 1.25;
+    const widthFactor = 0.55;
+
+    const wrapLine = (text, limit) => {
+      const words = text.trim().split(/\s+/).filter(Boolean);
+      const wrapped = [];
+      let current = '';
+      words.forEach((word) => {
+        const candidate = current ? `${current} ${word}` : word;
+        if (candidate.length <= limit || current.length === 0) {
+          current = candidate;
+        } else {
+          wrapped.push(current);
+          current = word;
+        }
+      });
+      if (current) {
+        wrapped.push(current);
+      }
+      return wrapped;
+    };
+
+    const rawLines = content
+      .replace(/\r/g, '')
+      .split('\n')
+      .map(line => line.trim())
+      .filter(Boolean);
+
+    const lines = rawLines.length ? rawLines.flatMap(line => wrapLine(line, 28)) : [''];
+
+    if (lines.length > maxLines) {
+      const head = lines.slice(0, maxLines - 1);
+      const tail = lines.slice(maxLines - 1).join(' ');
+      head.push(tail);
+      lines.length = 0;
+      lines.push(...head.slice(0, maxLines));
+    }
+
+    while (lines.length < 1) {
+      lines.push('');
+    }
+
+    const availableWidth = width - (marginX * 2);
+    const availableHeight = height - (marginY * 2);
+
+    const totalHeightFactor = 1 + ((lines.length - 1) * lineHeightFactor);
+    const maxFontFromHeight = Math.floor(availableHeight / totalHeightFactor);
+    let fontSize = Math.min(36, maxFontFromHeight || 14);
+    const minFont = 8;
+
+    const fitsWidth = (size) => lines.every(line => line.length === 0 || (line.length * size * widthFactor) <= availableWidth);
+
+    while (fontSize > minFont && !fitsWidth(fontSize)) {
+      fontSize -= 1;
+    }
+    if (fontSize < minFont) {
+      fontSize = minFont;
+    }
+
+    const encoder = new TextEncoder();
+    const lineHeight = fontSize * lineHeightFactor;
+    const centerY = height / 2;
+    const baselineAdjust = fontSize * 0.3;
+
+    const escape = (text) => text.replace(/[()\\]/g, '\\$&');
+    const estimateWidth = (text) => text.length * fontSize * widthFactor;
+
+    let stream = `BT\n/F1 ${fontSize.toFixed(2)} Tf\n`;
+    lines.forEach((line, index) => {
+      const textWidth = estimateWidth(line);
+      const x = Math.max(marginX, (width - textWidth) / 2);
+      const offset = ((lines.length - 1) / 2 - index) * lineHeight;
+      const y = centerY + offset - baselineAdjust;
+      stream += `1 0 0 1 ${x.toFixed(2)} ${y.toFixed(2)} Tm\n(${escape(line) || ' '}) Tj\n`;
+    });
+    stream += 'ET';
+
+    const chunks = [];
+    let offset = 0;
+    const offsets = [0];
+
+    const push = (text) => {
+      const bytes = encoder.encode(text);
+      chunks.push(bytes);
+      offset += bytes.length;
+    };
+
+    const pushObject = (id, body) => {
+      offsets.push(offset);
+      push(`${id} 0 obj\n${body}\nendobj\n`);
+    };
+
+    push('%PDF-1.4\n');
+    pushObject(1, '<< /Type /Catalog /Pages 2 0 R >>');
+    pushObject(2, `<< /Type /Pages /Kids [3 0 R] /Count 1 >>`);
+    pushObject(3, `<< /Type /Page /Parent 2 0 R /MediaBox [0 0 ${width.toFixed(2)} ${height.toFixed(2)}] /Contents 4 0 R /Resources << /Font << /F1 5 0 R >> >> >>`);
+
+    const streamBytes = encoder.encode(stream);
+    pushObject(4, `<< /Length ${streamBytes.length} >>\nstream\n${stream}\nendstream`);
+    pushObject(5, '<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>');
+
+    const xrefOffset = offset;
+    push('xref\n');
+    push(`0 ${offsets.length}\n`);
+    push('0000000000 65535 f \n');
+    offsets.slice(1).forEach((value) => {
+      push(`${value.toString().padStart(10, '0')} 00000 n \n`);
+    });
+
+    push('trailer\n');
+    push(`<< /Size ${offsets.length} /Root 1 0 R >>\n`);
+    push('startxref\n');
+    push(`${xrefOffset}\n`);
+    push('%%EOF\n');
+
+    return new Blob(chunks, { type: 'application/pdf' });
   }
 
   detectContentType(content) {
@@ -249,6 +550,9 @@ class InstantFile {
     // JSON detection
     if (this.isJSON(content)) return 'json';
     
+    // CSV detection
+    if (this.isCSV(content)) return 'csv';
+
     // Markdown detection
     if (this.isMarkdown(content)) return 'md';
     
@@ -326,12 +630,31 @@ class InstantFile {
     return htmlPatterns.some(p => p.test(content));
   }
 
+  isCSV(content) {
+    const trimmed = content.trim();
+    if (!trimmed.includes('\n')) return false;
+
+    const delimiters = [',', ';', '\t'];
+    const lines = trimmed.split(/\r?\n/);
+    const delimiter = delimiters.find(symbol => lines[0].includes(symbol));
+    if (!delimiter) return false;
+
+    const columnCount = lines[0].split(delimiter).length;
+    if (columnCount < 2) return false;
+
+    return lines.slice(1).every((line) => {
+      if (!line.trim()) return true;
+      const cells = line.split(delimiter);
+      return cells.length === columnCount;
+    });
+  }
+
   showNotification(message, type = 'success') {
     if (!this.settings.showNotifications) return;
 
     chrome.notifications.create({
       type: 'basic',
-      iconUrl: 'assets/icons/icon128.png',
+      iconUrl: 'icon128.png',
       title: 'InstantFile',
       message: message,
       priority: type === 'error' ? 2 : 1
@@ -345,7 +668,7 @@ const instantFile = new InstantFile();
 // Handle installation
 chrome.runtime.onInstalled.addListener((details) => {
   if (details.reason === 'install') {
-    console.log('ðŸŽ‰ InstantFile installed!');
-    chrome.tabs.create({ url: 'options/options.html' });
+    console.log('\uD83C\uDF89 InstantFile installed!');
+    chrome.tabs.create({ url: 'options.html' });
   }
 });

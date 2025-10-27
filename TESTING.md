@@ -15,6 +15,7 @@
 - **Tastenkürzel:** Hinterlegte Tastenkombi auslösen (`chrome://extensions/shortcuts`), sicherstellen, dass Downloads ohne UI-Fehler starten.
 - **Popup-Aktion:** Popup öffnen, Speichervorgang auslösen, Erfolgs-/Fehlerstatus verifizieren.
 - **Content-Erkennung:** Auf `test-instafile.html` alle Beispielblöcke (YAML, JSON, Markdown, Python) markieren und korrektes Autotyp-Label prüfen.
+- **Adresslabel 89x28:** Auswahl mit max. vier Zeilen markieren, über Popup oder Kontextmenü als Label speichern und PDF-Größe sowie Zeilenumbrüche prüfen.
 
 ## Regressions- und Fehlerpfade
 - Netz offline schalten (`chrome://settings/cronetInternals` → *Disable Network*) und erneut speichern: Erwartet klare Fehlermeldung.

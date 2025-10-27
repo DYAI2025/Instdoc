@@ -341,11 +341,11 @@ class InstaFileContent {
 
   async updateButtonStats() {
     if (!this.floatingButton) return;
-    
+
     try {
       const response = await chrome.runtime.sendMessage({ action: 'getStats' });
       const counter = this.floatingButton.querySelector('.instafile-fab-counter');
-      
+
       if (response && response.stats) {
         const count = response.stats.totalFiles || 0;
         counter.textContent = count;
@@ -353,7 +353,11 @@ class InstaFileContent {
         this.stats.totalSaves = count;
       }
     } catch (error) {
-      console.error('Stats error:', error);
+      const message = error instanceof Error ? error.message : String(error);
+      const ignorable = message.includes('Could not establish connection') || message.includes('Receiving end does not exist');
+      if (!ignorable) {
+        console.warn('Stats refresh failed:', message);
+      }
     }
   }
 
