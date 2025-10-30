@@ -14,6 +14,7 @@ class InstaFileContent {
       enableSmartDetection: true
     };
     this.stats = { totalSaves: 0 };
+    this.runtimeUnavailable = false;
     this.init();
   }
 
@@ -340,11 +341,13 @@ class InstaFileContent {
   }
 
   async updateButtonStats() {
-    if (!this.floatingButton) return;
+    if (!this.floatingButton || !this.isRuntimeAvailable()) return;
+
+    const counter = this.floatingButton.querySelector('.instafile-fab-counter');
+    if (!counter) return;
 
     try {
-      const response = await chrome.runtime.sendMessage({ action: 'getStats' });
-      const counter = this.floatingButton.querySelector('.instafile-fab-counter');
+      const response = await this.safeSendMessage({ action: 'getStats' });
 
       if (response && response.stats) {
         const count = response.stats.totalFiles || 0;
@@ -353,12 +356,54 @@ class InstaFileContent {
         this.stats.totalSaves = count;
       }
     } catch (error) {
-      const message = error instanceof Error ? error.message : String(error);
-      const ignorable = message.includes('Could not establish connection') || message.includes('Receiving end does not exist');
-      if (!ignorable) {
-        console.warn('Stats refresh failed:', message);
+      if (!this.isIgnorableRuntimeError(error)) {
+        console.warn('Stats refresh failed:', error.message || String(error));
       }
     }
+  }
+
+  isRuntimeAvailable() {
+    if (typeof chrome === 'undefined' || !chrome.runtime || typeof chrome.runtime.sendMessage !== 'function') {
+      if (!this.runtimeUnavailable) {
+        console.warn('InstaFile runtime unavailable: background messaging disabled');
+        this.runtimeUnavailable = true;
+      }
+      return false;
+    }
+
+    this.runtimeUnavailable = false;
+    return !!chrome.runtime.id;
+  }
+
+  safeSendMessage(payload) {
+    return new Promise((resolve, reject) => {
+      if (!this.isRuntimeAvailable()) {
+        reject(new Error('Extension runtime unavailable'));
+        return;
+      }
+
+      try {
+        chrome.runtime.sendMessage(payload, (response) => {
+          const lastError = chrome.runtime?.lastError;
+          if (lastError) {
+            reject(lastError);
+            return;
+          }
+          resolve(response);
+        });
+      } catch (error) {
+        reject(error);
+      }
+    });
+  }
+
+  isIgnorableRuntimeError(error) {
+    if (!error) return false;
+    const message = error.message || String(error);
+    return message.includes('Could not establish connection') ||
+      message.includes('Receiving end does not exist') ||
+      message.includes('Extension context invalidated') ||
+      message.includes('Extension runtime unavailable');
   }
 
   // Content Type Detection
@@ -402,12 +447,12 @@ class InstaFileContent {
     }
     
     try {
-      const response = await chrome.runtime.sendMessage({
+      const response = await this.safeSendMessage({
         action: 'saveContent',
         content: this.selectedText,
         type: 'auto'
       });
-      
+
       if (response && response.success) {
         this.showToast(`✅ Saved: ${this.selectedText.substring(0, 30)}...`, 'success');
         this.updateButtonStats();
@@ -419,7 +464,9 @@ class InstaFileContent {
       }
     } catch (error) {
       console.error('Save error:', error);
-      this.showToast('❌ Save failed', 'error');
+      const ignorable = this.isIgnorableRuntimeError(error);
+      const message = ignorable ? '⚠️ Extension unavailable' : '❌ Save failed';
+      this.showToast(message, ignorable ? 'warning' : 'error');
     }
   }
 
@@ -432,12 +479,12 @@ class InstaFileContent {
     const content = this.selectedText || document.title + '\n' + window.location.href;
     
     try {
-      const response = await chrome.runtime.sendMessage({
+      const response = await this.safeSendMessage({
         action: 'saveContent',
         content: content,
         type: format === 'smart' ? 'auto' : format
       });
-      
+
       if (response && response.success) {
         this.showToast(`✅ Saved as ${format.toUpperCase()}`, 'success');
         this.updateButtonStats();
@@ -445,7 +492,9 @@ class InstaFileContent {
       }
     } catch (error) {
       console.error('Save error:', error);
-      this.showToast('❌ Save failed', 'error');
+      const ignorable = this.isIgnorableRuntimeError(error);
+      const message = ignorable ? '⚠️ Extension unavailable' : '❌ Save failed';
+      this.showToast(message, ignorable ? 'warning' : 'error');
     }
   }
 
@@ -457,7 +506,7 @@ class InstaFileContent {
     };
     
     try {
-      const response = await chrome.runtime.sendMessage({
+      const response = await this.safeSendMessage({
         action: 'saveContent',
         content: pageInfo.html,
         type: 'html'
@@ -469,7 +518,9 @@ class InstaFileContent {
       }
     } catch (error) {
       console.error('Save error:', error);
-      this.showToast('❌ Failed to save page', 'error');
+      const ignorable = this.isIgnorableRuntimeError(error);
+      const message = ignorable ? '⚠️ Extension unavailable' : '❌ Failed to save page';
+      this.showToast(message, ignorable ? 'warning' : 'error');
     }
   }
 
@@ -522,6 +573,11 @@ class InstaFileContent {
 
   // Message Handler
   setupMessageListener() {
+    if (!chrome.runtime?.onMessage) {
+      console.warn('Messaging listener unavailable: runtime missing');
+      return;
+    }
+
     chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
       if (request.action === 'getSelection') {
         sendResponse({ text: window.getSelection().toString() });
