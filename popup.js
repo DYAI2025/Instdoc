@@ -100,6 +100,16 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   };
 
+  const loadStatsFromStorage = async () => {
+    try {
+      const result = await chrome.storage.local.get('stats');
+      return result && result.stats ? result.stats : null;
+    } catch (storageError) {
+      console.warn('Stats storage read failed:', storageError);
+      return null;
+    }
+  };
+
   const loadStats = async (quiet = false) => {
     try {
       const response = await chrome.runtime.sendMessage({ action: 'getStats' });
@@ -109,9 +119,14 @@ document.addEventListener('DOMContentLoaded', () => {
       }
     } catch (error) {
       console.error('Stats load failed:', error);
-      renderStats(null);
+      const cachedStats = await loadStatsFromStorage();
+      renderStats(cachedStats);
       if (!quiet) {
-        setStatus('Stats unavailable', 'warn');
+        if (cachedStats) {
+          setStatus('Using cached stats', 'info');
+        } else {
+          setStatus('Stats unavailable', 'warn');
+        }
       }
     }
   };
