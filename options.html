@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>InstaFile Preferences</title>
+  <link rel="stylesheet" href="options.css">
+</head>
+<body>
+  <main class="options-container">
+    <header class="options-header">
+      <div class="options-title">
+        <span class="logo">⚡</span>
+        <div>
+          <h1>InstaFile Preferences</h1>
+          <p class="subtitle">Customize how Instant saves behave everywhere.</p>
+        </div>
+      </div>
+      <div class="version" id="extension-version"></div>
+    </header>
+
+    <form id="options-form">
+      <section class="options-card">
+        <h2>Storage</h2>
+        <div class="field">
+          <label for="folderPath">Default folder</label>
+          <input id="folderPath" name="folderPath" type="text" placeholder="InstantFiles/">
+          <p class="help">Relative to your default Downloads directory.</p>
+        </div>
+        <div class="field">
+          <label for="namingPattern">Naming pattern</label>
+          <select id="namingPattern" name="namingPattern">
+            <option value="timestamp">Timestamp &mdash; <code>instant_YYYY-MM-DD</code></option>
+            <option value="firstline">First line of selection</option>
+            <option value="custom">Custom template</option>
+          </select>
+        </div>
+        <div class="field hidden" id="custom-pattern-row">
+          <label for="customPattern">Custom filename template</label>
+          <input id="customPattern" name="customPattern" type="text" placeholder="file_{date}_{type}">
+          <p class="help">Available tokens: <code>{date}</code>, <code>{time}</code>, <code>{type}</code></p>
+        </div>
+        <div class="toggle">
+          <label for="organizeByType">Organize by format</label>
+          <label class="switch">
+            <input id="organizeByType" name="organizeByType" type="checkbox">
+            <span class="slider"></span>
+          </label>
+        </div>
+      </section>
+
+      <section class="options-card">
+        <h2>Capture intelligence</h2>
+        <div class="toggle">
+          <label for="autoDetectType">Smart format detection</label>
+          <label class="switch">
+            <input id="autoDetectType" name="autoDetectType" type="checkbox">
+            <span class="slider"></span>
+          </label>
+        </div>
+        <div class="toggle">
+          <label for="enableSmartDetection">Highlight detected type in page</label>
+          <label class="switch">
+            <input id="enableSmartDetection" name="enableSmartDetection" type="checkbox">
+            <span class="slider"></span>
+          </label>
+        </div>
+        <div class="field">
+          <label for="selectionThreshold">Minimum selection length</label>
+          <div class="range-field">
+            <input id="selectionThreshold" name="selectionThreshold" type="range" min="0" max="200" step="5">
+            <span class="range-value"><span id="selectionThresholdValue">0</span> characters</span>
+          </div>
+        </div>
+      </section>
+
+      <section class="options-card">
+        <h2>Interface</h2>
+        <div class="toggle">
+          <label for="showFloatingButton">Floating quick-save button</label>
+          <label class="switch">
+            <input id="showFloatingButton" name="showFloatingButton" type="checkbox">
+            <span class="slider"></span>
+          </label>
+        </div>
+        <div class="field" id="button-position-row">
+          <label for="buttonPosition">Button position</label>
+          <select id="buttonPosition" name="buttonPosition">
+            <option value="bottom-right">Bottom right</option>
+            <option value="bottom-left">Bottom left</option>
+            <option value="top-right">Top right</option>
+            <option value="top-left">Top left</option>
+          </select>
+        </div>
+        <div class="toggle">
+          <label for="autoHideButton">Auto-hide when idle</label>
+          <label class="switch">
+            <input id="autoHideButton" name="autoHideButton" type="checkbox">
+            <span class="slider"></span>
+          </label>
+        </div>
+        <div class="toggle">
+          <label for="enableContextMenu">Context menu integration</label>
+          <label class="switch">
+            <input id="enableContextMenu" name="enableContextMenu" type="checkbox">
+            <span class="slider"></span>
+          </label>
+        </div>
+      </section>
+
+      <section class="options-card">
+        <h2>Feedback</h2>
+        <div class="toggle">
+          <label for="showNotifications">Show notifications</label>
+          <label class="switch">
+            <input id="showNotifications" name="showNotifications" type="checkbox">
+            <span class="slider"></span>
+          </label>
+        </div>
+        <div class="toggle">
+          <label for="playSound">Play confirmation sound</label>
+          <label class="switch">
+            <input id="playSound" name="playSound" type="checkbox">
+            <span class="slider"></span>
+          </label>
+        </div>
+      </section>
+
+      <section class="options-actions">
+        <div class="status" id="status-message" role="status" aria-live="polite"></div>
+        <div class="buttons">
+          <button type="button" class="btn secondary" id="reset-defaults">Reset defaults</button>
+          <button type="submit" class="btn primary">Save changes</button>
+        </div>
+      </section>
+    </form>
+  </main>
+
+  <script src="options.js"></script>
+</body>
+</html>
