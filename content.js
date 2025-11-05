@@ -347,7 +347,7 @@ class InstaFileContent {
     if (!counter) return;
 
     try {
-      const response = await this.safeSendMessage({ action: 'getStats' });
+      const response = await this.safeSendMessage({ action: 'getStats' }, { retries: 1, delay: 150 });
 
       if (response && response.stats) {
         const count = response.stats.totalFiles || 0;
@@ -375,35 +375,58 @@ class InstaFileContent {
     return !!chrome.runtime.id;
   }
 
-  safeSendMessage(payload) {
-    return new Promise((resolve, reject) => {
-      if (!this.isRuntimeAvailable()) {
-        reject(new Error('Extension runtime unavailable'));
-        return;
-      }
+  safeSendMessage(payload, options = {}) {
+    const { retries = 2, delay = 200 } = options;
 
-      try {
-        chrome.runtime.sendMessage(payload, (response) => {
-          const lastError = chrome.runtime?.lastError;
-          if (lastError) {
-            reject(lastError);
+    const attemptSend = (remaining) => {
+      return new Promise((resolve, reject) => {
+        if (!this.isRuntimeAvailable()) {
+          reject(new Error('Extension runtime unavailable'));
+          return;
+        }
+
+        const retryOrReject = (rawError) => {
+          const message = rawError && rawError.message ? rawError.message : String(rawError || 'Unknown error');
+          if (remaining > 0 && this.isTransientRuntimeErrorMessage(message)) {
+            setTimeout(() => {
+              attemptSend(remaining - 1).then(resolve).catch(reject);
+            }, delay);
             return;
           }
-          resolve(response);
-        });
-      } catch (error) {
-        reject(error);
-      }
-    });
+          reject(new Error(message));
+        };
+
+        try {
+          chrome.runtime.sendMessage(payload, (response) => {
+            const lastError = chrome.runtime?.lastError;
+            if (lastError) {
+              retryOrReject(lastError);
+              return;
+            }
+            resolve(response);
+          });
+        } catch (error) {
+          retryOrReject(error);
+        }
+      });
+    };
+
+    return attemptSend(retries);
   }
 
   isIgnorableRuntimeError(error) {
     if (!error) return false;
     const message = error.message || String(error);
+    return this.isTransientRuntimeErrorMessage(message) ||
+      message.includes('Extension runtime unavailable');
+  }
+
+  isTransientRuntimeErrorMessage(message) {
+    if (!message) return false;
     return message.includes('Could not establish connection') ||
       message.includes('Receiving end does not exist') ||
-      message.includes('Extension context invalidated') ||
-      message.includes('Extension runtime unavailable');
+      message.includes('The message port closed before a response was received') ||
+      message.includes('Extension context invalidated');
   }
 
   // Content Type Detection
@@ -843,15 +866,22 @@ class InstaFileContent {
   }
 }
 
-// Initialize InstaFile
-const instaFile = new InstaFileContent();
+// Expose constructor for automated tests
+if (typeof globalThis !== 'undefined') {
+  globalThis.InstaFileContent = InstaFileContent;
+}
 
-// Page visibility listener for stats refresh
-document.addEventListener('visibilitychange', () => {
-  if (!document.hidden) {
-    instaFile.updateButtonStats();
-  }
-});
+// Initialize InstaFile when DOM APIs are available
+if (typeof document !== 'undefined' && typeof document.addEventListener === 'function') {
+  const instaFile = new InstaFileContent();
 
-// Log initialization
-console.log('⚡ InstaFile content script loaded - Zero-friction file creation ready');
+  // Page visibility listener for stats refresh
+  document.addEventListener('visibilitychange', () => {
+    if (!document.hidden) {
+      instaFile.updateButtonStats();
+    }
+  });
+
+  // Log initialization
+  console.log('⚡ InstaFile content script loaded - Zero-friction file creation ready');
+}
