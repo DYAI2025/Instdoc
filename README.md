@@ -20,7 +20,7 @@
 | [Highlights](#highlights) | [Highlights (DE)](#highlights-de) |
 | [Installation](#installation) | [Installation (DE)](#installation-de) |
 | [Quickstart](#quickstart-save-any-selection) | [Schnellstart](#schnellstart-inhalte-speichern) |
-| [Supported Formats](#supported-formats--unterstutzte-formate) | [Unterstützte Dateiformate](#unterstutzte-dateiformate) |
+| [Supported Formats](#supported-formats--unterstützte-formate) | [Unterstützte Dateiformate](#unterstützte-dateiformate) |
 | [Naming & Storage](#smart-naming--storage) | [Dateibenennung & Ablage](#dateibenennung--ablage) |
 | [Preferences](#customise-your-workflow) | [Einstellungen anpassen](#einstellungen-anpassen) |
 | [Popup Insights](#popup-dashboard--insights) | [Popup & Statistiken](#popup--statistiken) |
