@@ -126,6 +126,47 @@
         </div>
       </section>
 
+      <section class="options-card">
+        <h2>Event Tracking & Recommendations</h2>
+        <p class="help">Track key events and get format recommendations based on your usage patterns</p>
+
+        <div class="toggle">
+          <label for="trackFormatUsage">Track format usage statistics</label>
+          <label class="switch">
+            <input id="trackFormatUsage" name="trackFormatUsage" type="checkbox" checked>
+            <span class="slider"></span>
+          </label>
+        </div>
+
+        <div class="toggle">
+          <label for="trackDetectionAccuracy">Track auto-detection accuracy</label>
+          <label class="switch">
+            <input id="trackDetectionAccuracy" name="trackDetectionAccuracy" type="checkbox" checked>
+            <span class="slider"></span>
+          </label>
+        </div>
+
+        <div class="toggle">
+          <label for="showFormatRecommendations">Show format recommendations</label>
+          <label class="switch">
+            <input id="showFormatRecommendations" name="showFormatRecommendations" type="checkbox" checked>
+            <span class="slider"></span>
+          </label>
+        </div>
+
+        <div class="recommendations-panel" id="recommendations-panel">
+          <h3>Available Recommendations</h3>
+          <div class="recommendations-list" id="recommendations-list">
+            <div class="recommendation-item">
+              <span class="rec-icon">💡</span>
+              <div class="rec-content">
+                <strong>Loading recommendations...</strong>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
       <section class="options-actions">
         <div class="status" id="status-message" role="status" aria-live="polite"></div>
         <div class="buttons">

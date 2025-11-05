@@ -11,7 +11,10 @@ const DEFAULT_SETTINGS = {
   buttonPosition: 'bottom-right',
   autoHideButton: true,
   selectionThreshold: 10,
-  enableSmartDetection: true
+  enableSmartDetection: true,
+  trackFormatUsage: true,
+  trackDetectionAccuracy: true,
+  showFormatRecommendations: true
 };
 
 const manifest = chrome.runtime.getManifest();
@@ -20,6 +23,7 @@ document.addEventListener('DOMContentLoaded', () => {
   renderVersion();
   setupForm();
   loadSettings();
+  loadRecommendations();
 });
 
 function renderVersion() {
@@ -105,6 +109,9 @@ function readFormSettings(form) {
   settings.autoHideButton = form.autoHideButton.checked;
   settings.selectionThreshold = Number(form.selectionThreshold.value || DEFAULT_SETTINGS.selectionThreshold);
   settings.enableSmartDetection = form.enableSmartDetection.checked;
+  settings.trackFormatUsage = form.trackFormatUsage?.checked ?? DEFAULT_SETTINGS.trackFormatUsage;
+  settings.trackDetectionAccuracy = form.trackDetectionAccuracy?.checked ?? DEFAULT_SETTINGS.trackDetectionAccuracy;
+  settings.showFormatRecommendations = form.showFormatRecommendations?.checked ?? DEFAULT_SETTINGS.showFormatRecommendations;
 
   return settings;
 }
@@ -129,6 +136,9 @@ function applySettings(settings) {
   form.autoHideButton.checked = merged.autoHideButton;
   form.selectionThreshold.value = merged.selectionThreshold;
   form.enableSmartDetection.checked = merged.enableSmartDetection;
+  if (form.trackFormatUsage) form.trackFormatUsage.checked = merged.trackFormatUsage;
+  if (form.trackDetectionAccuracy) form.trackDetectionAccuracy.checked = merged.trackDetectionAccuracy;
+  if (form.showFormatRecommendations) form.showFormatRecommendations.checked = merged.showFormatRecommendations;
 
   const customPatternRow = document.getElementById('custom-pattern-row');
   if (customPatternRow) {
@@ -191,4 +201,100 @@ function showStatusMessage(message, intent = 'info') {
       statusEl.classList.remove('success', 'error');
     }, 2500);
   }
+}
+
+async function loadRecommendations() {
+  try {
+    const stats = await chrome.storage.local.get(['stats', 'formatUsage', 'detectionAccuracy']);
+    const recommendations = generateRecommendations(stats);
+    displayRecommendations(recommendations);
+  } catch (error) {
+    console.error('Failed to load recommendations:', error);
+  }
+}
+
+function generateRecommendations(stats) {
+  const recommendations = [];
+
+  // Get format usage data
+  const formatUsage = stats.formatUsage || {};
+  const totalFiles = stats.stats?.totalFiles || 0;
+
+  // Recommendation 1: Most used format
+  const formats = Object.entries(formatUsage);
+  if (formats.length > 0) {
+    const mostUsed = formats.sort((a, b) => b[1] - a[1])[0];
+    recommendations.push({
+      icon: '📊',
+      title: `Most Used Format: ${mostUsed[0].toUpperCase()}`,
+      description: `You've saved ${mostUsed[1]} files in this format (${Math.round((mostUsed[1] / totalFiles) * 100)}% of total)`
+    });
+  } else {
+    recommendations.push({
+      icon: '🎯',
+      title: 'Smart Auto-Detection Enabled',
+      description: 'InstantFile will automatically detect the best format for your content'
+    });
+  }
+
+  // Recommendation 2: Detection accuracy
+  const accuracy = stats.detectionAccuracy || {};
+  const totalDetections = accuracy.total || 0;
+  const correctDetections = accuracy.correct || 0;
+  const accuracyRate = totalDetections > 0 ? Math.round((correctDetections / totalDetections) * 100) : 0;
+
+  if (totalDetections > 5) {
+    recommendations.push({
+      icon: accuracyRate > 80 ? '✅' : '⚠️',
+      title: `Detection Accuracy: ${accuracyRate}%`,
+      description: `${correctDetections} out of ${totalDetections} auto-detections were accurate`
+    });
+  } else {
+    recommendations.push({
+      icon: '💡',
+      title: 'New Format Detection Features',
+      description: 'Now supports TypeScript, XML, SQL, Shell scripts, and more!'
+    });
+  }
+
+  // Recommendation 3: Suggested formats based on usage
+  const supportedFormats = ['ts', 'tsx', 'xml', 'sql', 'sh', 'bash', 'css'];
+  const unusedFormats = supportedFormats.filter(fmt => !formatUsage[fmt]);
+
+  if (unusedFormats.length > 0 && totalFiles > 10) {
+    const formatList = unusedFormats.slice(0, 3).map(f => f.toUpperCase()).join(', ');
+    recommendations.push({
+      icon: '🆕',
+      title: 'Try New Formats',
+      description: `Explore these newly available formats: ${formatList}`
+    });
+  } else {
+    recommendations.push({
+      icon: '⚡',
+      title: `${totalFiles} Files Saved`,
+      description: 'Keep saving with InstantFile for better recommendations!'
+    });
+  }
+
+  return recommendations;
+}
+
+function displayRecommendations(recommendations) {
+  const listEl = document.getElementById('recommendations-list');
+  if (!listEl) return;
+
+  listEl.innerHTML = '';
+
+  recommendations.forEach(rec => {
+    const item = document.createElement('div');
+    item.className = 'recommendation-item';
+    item.innerHTML = `
+      <span class="rec-icon">${rec.icon}</span>
+      <div class="rec-content">
+        <strong>${rec.title}</strong>
+        <p>${rec.description}</p>
+      </div>
+    `;
+    listEl.appendChild(item);
+  });
 }

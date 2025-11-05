@@ -44,7 +44,10 @@ class InstantFile {
       buttonPosition: 'bottom-right',
       autoHideButton: true,
       selectionThreshold: 10,
-      enableSmartDetection: true
+      enableSmartDetection: true,
+      trackFormatUsage: true,
+      trackDetectionAccuracy: true,
+      showFormatRecommendations: true
     };
 
     const stored = await chrome.storage.sync.get(null);
@@ -78,8 +81,18 @@ class InstantFile {
         { id: 'auto', title: '\u26A1 Auto-detect & Save' },
         { id: 'txt', title: '\uD83D\uDCC4 Save as .txt' },
         { id: 'md', title: '\uD83D\uDCDD Save as .md' },
-        { id: 'yaml', title: '\u2699\uFE0F Save as .yaml' },
+        { id: 'json', title: '\uD83D\uDCCB Save as .json' },
+        { id: 'js', title: '\uD83D\uDFE8 Save as .js' },
+        { id: 'ts', title: '\uD83D\uDD35 Save as .ts' },
         { id: 'py', title: '\uD83D\uDC0D Save as .py' },
+        { id: 'html', title: '\uD83C\uDF10 Save as .html' },
+        { id: 'css', title: '\uD83C\uDFA8 Save as .css' },
+        { id: 'xml', title: '\uD83D\uDCF0 Save as .xml' },
+        { id: 'sql', title: '\uD83D\uDDC4 Save as .sql' },
+        { id: 'sh', title: '\u2699\uFE0F Save as .sh' },
+        { id: 'yaml', title: '\uD83D\uDCE6 Save as .yaml' },
+        { id: 'csv', title: '\uD83D\uDCCA Save as .csv' },
+        { id: 'pdf', title: '\uD83D\uDCD5 Save as PDF' },
         { id: 'label', title: '\uD83C\uDFF7\uFE0F Label 89\u00D728 mm (PDF)' }
       ];
 
@@ -254,6 +267,16 @@ class InstantFile {
       this.stats.lastTimestamp = now.getTime();
       await this.saveStats();
 
+      // Track format usage if enabled
+      if (this.settings.trackFormatUsage) {
+        await this.trackFormatUsage(targetType);
+      }
+
+      // Track detection accuracy if enabled and auto-detection was used
+      if (this.settings.trackDetectionAccuracy && type === 'auto') {
+        await this.trackDetectionAccuracy(targetType);
+      }
+
       // Show success notification
       if (this.settings.showNotifications) {
         this.showNotification(`\u2728 ${filename} created!`);
@@ -321,9 +344,16 @@ class InstantFile {
       'yaml': 'text/yaml;charset=utf-8',
       'py': 'text/x-python;charset=utf-8',
       'js': 'text/javascript;charset=utf-8',
+      'ts': 'text/typescript;charset=utf-8',
+      'tsx': 'text/typescript;charset=utf-8',
       'json': 'application/json;charset=utf-8',
       'html': 'text/html;charset=utf-8',
       'css': 'text/css;charset=utf-8',
+      'xml': 'application/xml;charset=utf-8',
+      'svg': 'image/svg+xml;charset=utf-8',
+      'sql': 'application/sql;charset=utf-8',
+      'sh': 'application/x-sh;charset=utf-8',
+      'bash': 'application/x-sh;charset=utf-8',
       'csv': 'text/csv;charset=utf-8',
       'url': 'text/plain;charset=utf-8'
     };
@@ -549,25 +579,40 @@ class InstantFile {
   detectContentType(content) {
     // YAML detection
     if (this.isYAML(content)) return 'yaml';
-    
+
     // Python detection
     if (this.isPython(content)) return 'py';
-    
+
+    // TypeScript detection (must come before JavaScript)
+    if (this.isTypeScript(content)) return 'ts';
+
     // JavaScript detection
     if (this.isJavaScript(content)) return 'js';
-    
+
     // JSON detection
     if (this.isJSON(content)) return 'json';
-    
+
+    // XML/SVG detection
+    if (this.isXML(content)) return 'xml';
+
+    // SQL detection
+    if (this.isSQL(content)) return 'sql';
+
+    // Shell script detection
+    if (this.isShellScript(content)) return 'sh';
+
     // CSV detection
     if (this.isCSV(content)) return 'csv';
 
     // Markdown detection
     if (this.isMarkdown(content)) return 'md';
-    
+
     // HTML detection
     if (this.isHTML(content)) return 'html';
-    
+
+    // CSS detection
+    if (this.isCSS(content)) return 'css';
+
     // Default
     return 'txt';
   }
@@ -656,6 +701,102 @@ class InstantFile {
       const cells = line.split(delimiter);
       return cells.length === columnCount;
     });
+  }
+
+  isTypeScript(content) {
+    const tsPatterns = [
+      /:\s*(string|number|boolean|any|void|never|unknown)\s*[;,)=]/,
+      /interface\s+\w+/,
+      /type\s+\w+\s*=/,
+      /<\w+>/,
+      /as\s+(const|string|number|boolean|any)/,
+      /export\s+(type|interface)/,
+      /React\.FC</,
+      /useState<.*>/,
+      /:\s*React\./
+    ];
+    const score = tsPatterns.filter(p => p.test(content)).length;
+    return score >= 2;
+  }
+
+  isXML(content) {
+    const xmlPatterns = [
+      /<\?xml/i,
+      /<svg/i,
+      /<\w+[^>]*xmlns/,
+      /<\w+>\s*<\w+>/,
+      /<!ENTITY/i
+    ];
+    const trimmed = content.trim();
+    if (trimmed.startsWith('<?xml') || trimmed.startsWith('<svg')) return true;
+    return xmlPatterns.some(p => p.test(content));
+  }
+
+  isSQL(content) {
+    const sqlPatterns = [
+      /\b(SELECT|INSERT|UPDATE|DELETE|CREATE|DROP|ALTER|TRUNCATE)\s+/i,
+      /\bFROM\s+\w+/i,
+      /\bWHERE\s+/i,
+      /\bJOIN\s+/i,
+      /\bGROUP\s+BY\b/i,
+      /\bORDER\s+BY\b/i,
+      /\bINTO\s+\w+/i
+    ];
+    const score = sqlPatterns.filter(p => p.test(content)).length;
+    return score >= 2;
+  }
+
+  isShellScript(content) {
+    const shellPatterns = [
+      /^#!\/bin\/(ba)?sh/m,
+      /^#!\/usr\/bin\/env\s+(ba)?sh/m,
+      /\b(echo|export|source|alias)\s+/,
+      /\$\{?\w+\}?/,
+      /if\s+\[.*\]\s*;\s*then/,
+      /for\s+\w+\s+in\s+/,
+      /while\s+\[.*\]/
+    ];
+    const score = shellPatterns.filter(p => p.test(content)).length;
+    if (content.trim().startsWith('#!/bin/bash') || content.trim().startsWith('#!/bin/sh')) return true;
+    return score >= 2;
+  }
+
+  isCSS(content) {
+    const cssPatterns = [
+      /[\w-]+\s*\{[^}]*[\w-]+\s*:\s*[^}]+\}/,
+      /@media\s*\([^)]+\)/,
+      /@import\s+/,
+      /[\w-]+:\s*[\w-]+(\([^)]*\))?;/,
+      /\.([\w-]+)\s*\{/,
+      /#([\w-]+)\s*\{/,
+      /@keyframes\s+\w+/
+    ];
+    const score = cssPatterns.filter(p => p.test(content)).length;
+    return score >= 2;
+  }
+
+  async trackFormatUsage(format) {
+    try {
+      const stored = await chrome.storage.local.get(['formatUsage']);
+      const formatUsage = stored.formatUsage || {};
+      formatUsage[format] = (formatUsage[format] || 0) + 1;
+      await chrome.storage.local.set({ formatUsage });
+    } catch (error) {
+      console.error('Failed to track format usage:', error);
+    }
+  }
+
+  async trackDetectionAccuracy(detectedFormat) {
+    try {
+      const stored = await chrome.storage.local.get(['detectionAccuracy']);
+      const accuracy = stored.detectionAccuracy || { total: 0, correct: 0 };
+      accuracy.total++;
+      // For now, we assume detection is correct. In future, users could provide feedback
+      accuracy.correct++;
+      await chrome.storage.local.set({ detectionAccuracy: accuracy });
+    } catch (error) {
+      console.error('Failed to track detection accuracy:', error);
+    }
   }
 
   showNotification(message, type = 'success') {

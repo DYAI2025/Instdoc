@@ -282,6 +282,67 @@ body {
   display: none;
 }
 
+/* Recommendations Panel */
+.recommendations-panel {
+  margin-top: 16px;
+  padding: 20px;
+  background: rgba(56, 189, 248, 0.05);
+  border-radius: 12px;
+  border: 1px solid rgba(56, 189, 248, 0.2);
+}
+
+.recommendations-panel h3 {
+  margin: 0 0 16px;
+  font-size: 16px;
+  color: var(--accent);
+}
+
+.recommendations-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.recommendation-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 14px;
+  background: var(--card);
+  border-radius: 10px;
+  border: 1px solid var(--border);
+  transition: all 0.2s ease;
+}
+
+.recommendation-item:hover {
+  transform: translateX(4px);
+  border-color: rgba(56, 189, 248, 0.4);
+  box-shadow: 0 4px 12px rgba(56, 189, 248, 0.15);
+}
+
+.rec-icon {
+  font-size: 24px;
+  flex-shrink: 0;
+}
+
+.rec-content {
+  flex: 1;
+}
+
+.rec-content strong {
+  display: block;
+  margin-bottom: 4px;
+  font-size: 14px;
+  color: var(--text);
+}
+
+.rec-content p {
+  margin: 0;
+  font-size: 13px;
+  color: var(--muted);
+  line-height: 1.5;
+}
+
 @media (max-width: 720px) {
   body {
     padding: 24px 12px;
@@ -299,5 +360,13 @@ body {
 
   .btn {
     width: 100%;
+  }
+
+  .recommendation-item {
+    padding: 12px;
+  }
+
+  .rec-icon {
+    font-size: 20px;
   }
 }
