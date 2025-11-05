@@ -110,22 +110,51 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   };
 
+  const sendMessageWithTimeout = (message, timeout = 1000) => {
+    return new Promise((resolve, reject) => {
+      const timer = setTimeout(() => {
+        reject(new Error('Service worker timeout'));
+      }, timeout);
+
+      chrome.runtime.sendMessage(message, (response) => {
+        clearTimeout(timer);
+        if (chrome.runtime.lastError) {
+          reject(chrome.runtime.lastError);
+        } else {
+          resolve(response);
+        }
+      });
+    });
+  };
+
   const loadStats = async (quiet = false) => {
     try {
-      const response = await chrome.runtime.sendMessage({ action: 'getStats' });
+      const response = await sendMessageWithTimeout({ action: 'getStats' }, 1000);
       renderStats(response ? response.stats : null);
       if (!quiet) {
         setStatus('Ready', 'ok');
       }
     } catch (error) {
-      console.error('Stats load failed:', error);
+      // Check if it's a connection error (service worker not responding)
+      const isConnectionError =
+        error && (
+          error.message === 'Service worker timeout' ||
+          error.message?.includes('Receiving end does not exist') ||
+          error.message?.includes('Could not establish connection')
+        );
+
+      if (!isConnectionError) {
+        console.error('Stats load failed:', error);
+      }
+
       const cachedStats = await loadStatsFromStorage();
       renderStats(cachedStats);
+
       if (!quiet) {
         if (cachedStats) {
-          setStatus('Using cached stats', 'info');
+          setStatus('Ready', 'ok');
         } else {
-          setStatus('Stats unavailable', 'warn');
+          setStatus('Ready', 'ok');
         }
       }
     }
@@ -186,14 +215,25 @@ document.addEventListener('DOMContentLoaded', () => {
 
   const sendSaveRequest = async (content, type) => {
     try {
-      const response = await chrome.runtime.sendMessage({
+      const response = await sendMessageWithTimeout({
         action: 'saveContent',
         content,
         type,
-      });
+      }, 5000);
       return response || { success: false, error: 'No response from service worker' };
     } catch (error) {
-      return { success: false, error: error instanceof Error ? error.message : String(error) };
+      const isConnectionError =
+        error && (
+          error.message === 'Service worker timeout' ||
+          error.message?.includes('Receiving end does not exist') ||
+          error.message?.includes('Could not establish connection')
+        );
+
+      const errorMessage = isConnectionError
+        ? 'Service worker unavailable. Please try again.'
+        : (error instanceof Error ? error.message : String(error));
+
+      return { success: false, error: errorMessage };
     }
   };
 

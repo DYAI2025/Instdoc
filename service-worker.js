@@ -135,7 +135,16 @@ class InstantFile {
           });
         return true;
       } else if (message.action === 'getStats') {
-        sendResponse({ stats: this.stats });
+        // Ensure stats are loaded from storage before responding
+        this.loadStats()
+          .then(() => {
+            sendResponse({ stats: this.stats });
+          })
+          .catch((error) => {
+            console.error('Stats load error:', error);
+            sendResponse({ stats: this.stats });
+          });
+        return true;
       } else if (message.action === 'getSettings') {
         sendResponse({ settings: this.settings });
       } else if (message.action === 'refreshSettings') {
