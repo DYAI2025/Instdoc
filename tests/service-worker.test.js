@@ -103,11 +103,12 @@ describe('service worker bootstrap', () => {
     expect(context.chrome.tabs.create).toHaveBeenCalledWith({ url: 'options.html' });
   });
 
-  it('responds to getStats requests from clients', () => {
+  it('responds to getStats requests from clients', async () => {
     const messageHandlers = context.chrome.runtime.onMessage.handlers;
     expect(messageHandlers.length).toBeGreaterThan(0);
     const sendResponse = vi.fn();
     messageHandlers[0]({ action: 'getStats' }, {}, sendResponse);
+    await flushPromises();
     expect(sendResponse).toHaveBeenCalledWith({ stats: expect.objectContaining({ totalFiles: 0 }) });
   });
 });
