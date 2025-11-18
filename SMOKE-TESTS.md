@@ -24,7 +24,7 @@ npm run test
 1. [ ] Open Chrome and navigate to `chrome://extensions`
 2. [ ] Enable **Developer mode** (toggle in top-right)
 3. [ ] Click **Load unpacked**
-4. [ ] Select the `/home/user/Instdoc` directory
+4. [ ] Select your extension directory (e.g., `/path/to/extension`)
 5. [ ] Verify extension loads without errors
 6. [ ] Check that extension icon appears in toolbar
 7. [ ] Verify no errors in service worker console
