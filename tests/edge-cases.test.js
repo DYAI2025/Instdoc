@@ -14,6 +14,9 @@ const createChromeStub = () => {
     addListener: vi.fn((handler) => {
       onMessage.handlers.push(handler);
     }),
+    getHandlers: function() {
+      return this.handlers;
+    },
   };
   const onClicked = {
     addListener: vi.fn(),
