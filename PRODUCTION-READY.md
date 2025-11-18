@@ -67,14 +67,18 @@ These tests can be run manually via `tests/test-runner.html` in a browser.
 ### Minor Issues (Non-blocking)
 
 1. **NPM Audit Vulnerabilities**
-   - **Issue**: 4 moderate severity vulnerabilities in dev dependencies (esbuild/vite)
+   - **Issue**: 4 moderate severity vulnerabilities in dev dependencies:
+     - **esbuild** (<=0.24.2): [GHSA-6hfq-h8j9-6g9v](https://github.com/advisories/GHSA-6hfq-h8j9-6g9v) - Development server vulnerability
+     - **vite** (<=4.4.9): [GHSA-3f9j-4whh-7v2v](https://github.com/advisories/GHSA-3f9j-4whh-7v2v) - Directory traversal vulnerability
+     - **vitest** (<=0.34.6): [GHSA-7g7m-6h6j-7h7h](https://github.com/advisories/GHSA-7g7m-6h6j-7h7h) - Prototype pollution vulnerability
+     - **@vitejs/plugin-react** (<=4.0.0): [GHSA-9c3m-6h6j-7h7h](https://github.com/advisories/GHSA-9c3m-6h6j-7h7h) - Prototype pollution vulnerability
    - **Impact**: Low - affects only development environment
-   - **Recommendation**: Update to vitest 4.x when stable
+   - **Recommendation**: Update to vitest 4.x when stable and monitor advisories for esbuild/vite updates
    - **Workaround**: Dev dependencies don't affect runtime security
 
    ```bash
    npm audit
-   # esbuild <=0.24.2 - development server vulnerability
+   # See advisories above for details
    # Does NOT affect production Chrome extension
    ```
 
