@@ -1,3 +1,23 @@
+const CONTEXT_MENU_OPTIONS = [
+  { id: 'auto', label: 'Smart auto-detect', description: 'Let InstaFile choose the best format', emoji: '🎯' },
+  { id: 'txt', label: 'Plain text (.txt)', description: 'Simple notes and prose', emoji: '📄' },
+  { id: 'md', label: 'Markdown (.md)', description: 'Lightweight formatted docs', emoji: '📝' },
+  { id: 'json', label: 'JSON (.json)', description: 'APIs and structured data', emoji: '🧩' },
+  { id: 'js', label: 'JavaScript (.js)', description: 'Browser and Node snippets', emoji: '🟡' },
+  { id: 'ts', label: 'TypeScript (.ts)', description: 'Typed code blocks', emoji: '🔵' },
+  { id: 'py', label: 'Python (.py)', description: 'Scripts & notebooks', emoji: '🐍' },
+  { id: 'html', label: 'HTML (.html)', description: 'Templates and snippets', emoji: '🌐' },
+  { id: 'css', label: 'CSS (.css)', description: 'Stylesheets', emoji: '🎨' },
+  { id: 'xml', label: 'XML (.xml)', description: 'Configs and feeds', emoji: '📰' },
+  { id: 'sql', label: 'SQL (.sql)', description: 'Database queries', emoji: '📑' },
+  { id: 'sh', label: 'Shell (.sh)', description: 'Bash & shell scripts', emoji: '⚙️' },
+  { id: 'yaml', label: 'YAML (.yaml)', description: 'Configs & workflows', emoji: '🧾' },
+  { id: 'csv', label: 'CSV (.csv)', description: 'Spreadsheets and tables', emoji: '📊' },
+  { id: 'pdf', label: 'PDF (.pdf)', description: 'Portable documents', emoji: '📕' },
+  { id: 'label', label: 'Label (89×28mm PDF)', description: 'Ready-to-print labels', emoji: '🏷️' },
+  { id: 'saveas', label: 'Save As…', description: 'Pick folder & filename each time', emoji: '📁' }
+];
+
 const DEFAULT_SETTINGS = {
   folderPath: 'InstantFiles/',
   namingPattern: 'timestamp',
@@ -14,7 +34,8 @@ const DEFAULT_SETTINGS = {
   enableSmartDetection: true,
   trackFormatUsage: true,
   trackDetectionAccuracy: true,
-  showFormatRecommendations: true
+  showFormatRecommendations: true,
+  contextMenuFormats: CONTEXT_MENU_OPTIONS.map(option => option.id)
 };
 
 const manifest = chrome.runtime.getManifest();
@@ -42,6 +63,8 @@ function setupForm() {
   const showFloatingButton = document.getElementById('showFloatingButton');
   const buttonPositionRow = document.getElementById('button-position-row');
   const resetButton = document.getElementById('reset-defaults');
+
+  renderContextMenuFormatOptions(DEFAULT_SETTINGS.contextMenuFormats);
 
   if (namingPattern && customPatternRow) {
     namingPattern.addEventListener('change', () => {
@@ -112,6 +135,8 @@ function readFormSettings(form) {
   settings.trackFormatUsage = form.trackFormatUsage?.checked ?? DEFAULT_SETTINGS.trackFormatUsage;
   settings.trackDetectionAccuracy = form.trackDetectionAccuracy?.checked ?? DEFAULT_SETTINGS.trackDetectionAccuracy;
   settings.showFormatRecommendations = form.showFormatRecommendations?.checked ?? DEFAULT_SETTINGS.showFormatRecommendations;
+  const selectedFormats = getSelectedContextMenuFormats(form);
+  settings.contextMenuFormats = selectedFormats.length ? selectedFormats : DEFAULT_SETTINGS.contextMenuFormats;
 
   return settings;
 }
@@ -139,6 +164,7 @@ function applySettings(settings) {
   if (form.trackFormatUsage) form.trackFormatUsage.checked = merged.trackFormatUsage;
   if (form.trackDetectionAccuracy) form.trackDetectionAccuracy.checked = merged.trackDetectionAccuracy;
   if (form.showFormatRecommendations) form.showFormatRecommendations.checked = merged.showFormatRecommendations;
+  setContextMenuFormatSelections(merged.contextMenuFormats);
 
   const customPatternRow = document.getElementById('custom-pattern-row');
   if (customPatternRow) {
@@ -297,4 +323,52 @@ function displayRecommendations(recommendations) {
     `;
     listEl.appendChild(item);
   });
+}
+
+function renderContextMenuFormatOptions(selectedFormats = []) {
+  const container = document.getElementById('context-menu-formats');
+  if (!container) return;
+
+  container.innerHTML = '';
+  CONTEXT_MENU_OPTIONS.forEach(option => {
+    const label = document.createElement('label');
+    label.className = 'format-option';
+
+    const input = document.createElement('input');
+    input.type = 'checkbox';
+    input.name = 'contextMenuFormats';
+    input.value = option.id;
+    input.checked = selectedFormats.includes(option.id);
+
+    const icon = document.createElement('div');
+    icon.className = 'format-icon';
+    icon.textContent = option.emoji;
+
+    const copy = document.createElement('div');
+    copy.className = 'format-copy';
+    const title = document.createElement('strong');
+    title.textContent = option.label;
+    const description = document.createElement('span');
+    description.textContent = option.description;
+    copy.appendChild(title);
+    copy.appendChild(description);
+
+    label.appendChild(input);
+    label.appendChild(icon);
+    label.appendChild(copy);
+    container.appendChild(label);
+  });
+}
+
+function setContextMenuFormatSelections(selectedFormats = []) {
+  const checkboxes = document.querySelectorAll('input[name="contextMenuFormats"]');
+  checkboxes.forEach(box => {
+    box.checked = selectedFormats.includes(box.value);
+  });
+}
+
+function getSelectedContextMenuFormats(form) {
+  return Array.from(form.querySelectorAll('input[name="contextMenuFormats"]'))
+    .filter(input => input.checked)
+    .map(input => input.value);
 }

@@ -147,6 +147,65 @@ body {
   color: var(--muted);
 }
 
+.format-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 12px;
+}
+
+.format-option {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px;
+  border-radius: 14px;
+  border: 1px solid var(--border);
+  background: rgba(15, 23, 42, 0.35);
+  cursor: pointer;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease, transform 0.2s ease;
+}
+
+@media (prefers-color-scheme: light) {
+  .format-option {
+    background: rgba(248, 250, 252, 0.9);
+  }
+}
+
+.format-option:hover {
+  border-color: rgba(56, 189, 248, 0.7);
+  box-shadow: 0 8px 18px rgba(15, 23, 42, 0.2);
+  transform: translateY(-1px);
+}
+
+.format-option input[type="checkbox"] {
+  width: 18px;
+  height: 18px;
+  margin: 0;
+  accent-color: rgba(56, 189, 248, 0.9);
+  flex-shrink: 0;
+  align-self: flex-start;
+  margin-top: 2px;
+}
+
+.format-option .format-icon {
+  font-size: 20px;
+}
+
+.format-option .format-copy {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.format-option .format-copy strong {
+  font-size: 14px;
+}
+
+.format-option .format-copy span {
+  font-size: 12px;
+  color: var(--muted);
+}
+
 .toggle {
   display: flex;
   align-items: center;

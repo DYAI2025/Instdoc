@@ -1,6 +1,28 @@
 // InstantFile Service Worker
 // Core download and file management logic
 
+const CONTEXT_MENU_ITEMS = [
+  { id: 'auto', title: '\u26A1 Auto-detect & Save' },
+  { id: 'txt', title: '\uD83D\uDCC4 Save as .txt' },
+  { id: 'md', title: '\uD83D\uDCDD Save as .md' },
+  { id: 'json', title: '\uD83D\uDCCB Save as .json' },
+  { id: 'js', title: '\uD83D\uDFE8 Save as .js' },
+  { id: 'ts', title: '\uD83D\uDD35 Save as .ts' },
+  { id: 'py', title: '\uD83D\uDC0D Save as .py' },
+  { id: 'html', title: '\uD83C\uDF10 Save as .html' },
+  { id: 'css', title: '\uD83C\uDFA8 Save as .css' },
+  { id: 'xml', title: '\uD83D\uDCF0 Save as .xml' },
+  { id: 'sql', title: '\uD83D\uDDC4 Save as .sql' },
+  { id: 'sh', title: '\u2699\uFE0F Save as .sh' },
+  { id: 'yaml', title: '\uD83D\uDCE6 Save as .yaml' },
+  { id: 'csv', title: '\uD83D\uDCCA Save as .csv' },
+  { id: 'pdf', title: '\uD83D\uDCD5 Save as PDF' },
+  { id: 'label', title: '\uD83C\uDFF7\uFE0F Label 89\u00D728 mm (PDF)' },
+  { id: 'saveas', title: '\uD83D\uDCC1 Save As\u2026', saveAs: true }
+];
+
+const DEFAULT_CONTEXT_MENU_FORMATS = CONTEXT_MENU_ITEMS.map(item => item.id);
+
 class InstantFile {
   constructor() {
     this.stats = {
@@ -47,7 +69,8 @@ class InstantFile {
       enableSmartDetection: true,
       trackFormatUsage: true,
       trackDetectionAccuracy: true,
-      showFormatRecommendations: true
+      showFormatRecommendations: true,
+      contextMenuFormats: DEFAULT_CONTEXT_MENU_FORMATS
     };
 
     const stored = await chrome.storage.sync.get(null);
@@ -77,24 +100,11 @@ class InstantFile {
         return;
       }
 
-      const fileTypes = [
-        { id: 'auto', title: '\u26A1 Auto-detect & Save' },
-        { id: 'txt', title: '\uD83D\uDCC4 Save as .txt' },
-        { id: 'md', title: '\uD83D\uDCDD Save as .md' },
-        { id: 'json', title: '\uD83D\uDCCB Save as .json' },
-        { id: 'js', title: '\uD83D\uDFE8 Save as .js' },
-        { id: 'ts', title: '\uD83D\uDD35 Save as .ts' },
-        { id: 'py', title: '\uD83D\uDC0D Save as .py' },
-        { id: 'html', title: '\uD83C\uDF10 Save as .html' },
-        { id: 'css', title: '\uD83C\uDFA8 Save as .css' },
-        { id: 'xml', title: '\uD83D\uDCF0 Save as .xml' },
-        { id: 'sql', title: '\uD83D\uDDC4 Save as .sql' },
-        { id: 'sh', title: '\u2699\uFE0F Save as .sh' },
-        { id: 'yaml', title: '\uD83D\uDCE6 Save as .yaml' },
-        { id: 'csv', title: '\uD83D\uDCCA Save as .csv' },
-        { id: 'pdf', title: '\uD83D\uDCD5 Save as PDF' },
-        { id: 'label', title: '\uD83C\uDFF7\uFE0F Label 89\u00D728 mm (PDF)' }
-      ];
+      const selectedFormats = Array.isArray(this.settings.contextMenuFormats) && this.settings.contextMenuFormats.length
+        ? this.settings.contextMenuFormats
+        : DEFAULT_CONTEXT_MENU_FORMATS;
+      const itemsToRender = CONTEXT_MENU_ITEMS.filter(item => selectedFormats.includes(item.id));
+      const menuItems = itemsToRender.length ? itemsToRender : [CONTEXT_MENU_ITEMS[0]];
 
       // Parent menu
       chrome.contextMenus.create({
@@ -104,7 +114,7 @@ class InstantFile {
       });
 
       // Child menus
-      fileTypes.forEach(type => {
+      menuItems.forEach(type => {
         chrome.contextMenus.create({
           id: `instant-${type.id}`,
           parentId: 'instant-file-parent',
@@ -217,7 +227,7 @@ class InstantFile {
     }
   }
 
-  async handleSave(content, type, tab) {
+  async handleSave(content, type, tab, options = {}) {
     if (!content || content.trim().length === 0) {
       const error = new Error('No content to save');
       error.handled = true;
@@ -226,8 +236,10 @@ class InstantFile {
     }
 
     try {
+      const saveAsRequested = options.saveAs || type === 'saveas';
+      let requestedType = type === 'saveas' ? 'auto' : type;
       // Auto-detect if requested
-      let targetType = type;
+      let targetType = requestedType;
       if (targetType === 'auto') {
         targetType = this.settings.autoDetectType
           ? this.detectContentType(content)
@@ -250,7 +262,7 @@ class InstantFile {
       const downloadId = await chrome.downloads.download({
         url,
         filename: filepath,
-        saveAs: false,
+        saveAs: saveAsRequested,
         conflictAction: 'uniquify'
       });
 
@@ -273,7 +285,7 @@ class InstantFile {
       }
 
       // Track detection accuracy if enabled and auto-detection was used
-      if (this.settings.trackDetectionAccuracy && type === 'auto') {
+      if (this.settings.trackDetectionAccuracy && requestedType === 'auto') {
         await this.trackDetectionAccuracy(targetType);
       }
 
