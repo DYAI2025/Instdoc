@@ -175,6 +175,7 @@ class InstaFileContent {
         <button data-format="txt" title="Text">📄</button>
         <button data-format="md" title="Markdown">📝</button>
         <button data-format="pdf" title="PDF">📕</button>
+        <button data-format="saveas" title="Save As">📁</button>
       </div>
     `;
     
@@ -256,6 +257,10 @@ class InstaFileContent {
           <button data-format="pdf" class="instafile-fab-option" title="PDF">
             <span>📕</span>
             <label>PDF</label>
+          </button>
+          <button data-format="saveas" class="instafile-fab-option" title="Save As">
+            <span>📁</span>
+            <label>Save As</label>
           </button>
           <button data-format="code" class="instafile-fab-option" title="Code">
             <span>👨‍💻</span>
@@ -498,11 +503,12 @@ class InstaFileContent {
   }
 
   async saveWithFormat(format) {
-    if (!this.selectedText && format !== 'smart') {
+    const requiresSelection = format !== 'smart' && format !== 'saveas';
+    if (!this.selectedText && requiresSelection) {
       this.showToast('⚠️ No text selected', 'warning');
       return;
     }
-    
+
     const content = this.selectedText || document.title + '\n' + window.location.href;
     
     try {
@@ -513,7 +519,15 @@ class InstaFileContent {
       });
 
       if (response && response.success) {
-        this.showToast(`✅ Saved as ${format.toUpperCase()}`, 'success');
+        const formatLabel = format === 'smart'
+          ? 'Auto'
+          : format === 'saveas'
+            ? 'Save As'
+            : format.toUpperCase();
+        const toastMessage = format === 'saveas'
+          ? '📁 Choose where to save your file'
+          : `✅ Saved as ${formatLabel}`;
+        this.showToast(toastMessage, 'success');
         this.updateButtonStats();
         this.addSaveAnimation();
       }
