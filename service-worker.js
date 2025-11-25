@@ -825,7 +825,7 @@ class FlashDoc {
 }
 
 // Initialize
-const flashDoc = new FlashDoc();
+new FlashDoc();
 
 // Handle installation
 chrome.runtime.onInstalled.addListener((details) => {
