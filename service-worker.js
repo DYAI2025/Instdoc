@@ -1,4 +1,4 @@
-// InstantFile Service Worker
+// FlashDoc Service Worker
 // Core download and file management logic
 
 const CONTEXT_MENU_ITEMS = [
@@ -23,7 +23,7 @@ const CONTEXT_MENU_ITEMS = [
 
 const DEFAULT_CONTEXT_MENU_FORMATS = CONTEXT_MENU_ITEMS.map(item => item.id);
 
-class InstantFile {
+class FlashDoc {
   constructor() {
     this.stats = {
       totalFiles: 0,
@@ -49,12 +49,12 @@ class InstantFile {
     // Load stats
     await this.loadStats();
     
-    console.log('\u26A1 InstantFile initialized');
+    console.log('\u26A1 FlashDoc initialized');
   }
 
   async loadSettings() {
     const defaults = {
-      folderPath: 'InstantFiles/',
+      folderPath: 'FlashDocs/',
       namingPattern: 'timestamp',
       customPattern: 'file_{date}',
       organizeByType: true,
@@ -108,16 +108,16 @@ class InstantFile {
 
       // Parent menu
       chrome.contextMenus.create({
-        id: 'instant-file-parent',
-        title: '\u26A1 InstantFile',
+        id: 'flashdoc-parent',
+        title: '\u26A1 FlashDoc',
         contexts: ['selection']
       });
 
       // Child menus
       menuItems.forEach(type => {
         chrome.contextMenus.create({
-          id: `instant-${type.id}`,
-          parentId: 'instant-file-parent',
+          id: `flashdoc-${type.id}`,
+          parentId: 'flashdoc-parent',
           title: type.title,
           contexts: ['selection']
         });
@@ -188,9 +188,9 @@ class InstantFile {
   }
 
   onContextMenuClicked(info, tab) {
-    if (!info.menuItemId || !info.menuItemId.startsWith('instant-')) return;
+    if (!info.menuItemId || !info.menuItemId.startsWith('flashdoc-')) return;
 
-    const type = info.menuItemId.replace('instant-', '');
+    const type = info.menuItemId.replace('flashdoc-', '');
     this.handleSave(info.selectionText, type, tab).catch((error) => {
       console.error('Context menu save failed:', error);
     });
@@ -327,7 +327,7 @@ class InstantFile {
         
         return firstLine && firstLine.length > 3
           ? `${firstLine}.${fileExtension}`
-          : `instant_${timestamp}.${fileExtension}`;
+          : `flashdoc_${timestamp}.${fileExtension}`;
       }
 
       case 'custom': {
@@ -340,7 +340,7 @@ class InstantFile {
 
       case 'timestamp':
       default:
-        return `instant_${timestamp}.${fileExtension}`;
+        return `flashdoc_${timestamp}.${fileExtension}`;
     }
   }
 
@@ -817,7 +817,7 @@ class InstantFile {
     chrome.notifications.create({
       type: 'basic',
       iconUrl: 'icon128.png',
-      title: 'InstantFile',
+      title: 'FlashDoc',
       message: message,
       priority: type === 'error' ? 2 : 1
     });
@@ -825,12 +825,12 @@ class InstantFile {
 }
 
 // Initialize
-const instantFile = new InstantFile();
+new FlashDoc();
 
 // Handle installation
 chrome.runtime.onInstalled.addListener((details) => {
   if (details.reason === 'install') {
-    console.log('\uD83C\uDF89 InstantFile installed!');
+    console.log('\uD83C\uDF89 FlashDoc installed!');
     chrome.tabs.create({ url: 'options.html' });
   }
 });

@@ -1,5 +1,5 @@
 const CONTEXT_MENU_OPTIONS = [
-  { id: 'auto', label: 'Smart auto-detect', description: 'Let InstaFile choose the best format', emoji: '🎯' },
+  { id: 'auto', label: 'Smart auto-detect', description: 'Let FlashDoc choose the best format', emoji: '🎯' },
   { id: 'txt', label: 'Plain text (.txt)', description: 'Simple notes and prose', emoji: '📄' },
   { id: 'md', label: 'Markdown (.md)', description: 'Lightweight formatted docs', emoji: '📝' },
   { id: 'json', label: 'JSON (.json)', description: 'APIs and structured data', emoji: '🧩' },
@@ -19,7 +19,7 @@ const CONTEXT_MENU_OPTIONS = [
 ];
 
 const DEFAULT_SETTINGS = {
-  folderPath: 'InstantFiles/',
+  folderPath: 'FlashDocs/',
   namingPattern: 'timestamp',
   customPattern: 'file_{date}',
   organizeByType: true,
@@ -259,7 +259,7 @@ function generateRecommendations(stats) {
     recommendations.push({
       icon: '🎯',
       title: 'Smart Auto-Detection Enabled',
-      description: 'InstantFile will automatically detect the best format for your content'
+      description: 'FlashDoc will automatically detect the best format for your content'
     });
   }
 
@@ -298,7 +298,7 @@ function generateRecommendations(stats) {
     recommendations.push({
       icon: '⚡',
       title: `${totalFiles} Files Saved`,
-      description: 'Keep saving with InstantFile for better recommendations!'
+      description: 'Keep saving with FlashDoc for better recommendations!'
     });
   }
 

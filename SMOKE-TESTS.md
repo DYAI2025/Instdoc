@@ -1,6 +1,6 @@
 # Smoke Test Checklist
 
-This document provides a comprehensive smoke testing checklist for the InstaFile Chrome extension to ensure production readiness.
+This document provides a comprehensive smoke testing checklist for the FlashDoc Chrome extension to ensure production readiness.
 
 ## ✅ Pre-Installation Tests
 
@@ -32,7 +32,7 @@ npm run test
 **Expected Behavior:**
 - Extension loads successfully
 - Welcome page (options.html) opens automatically
-- Service worker shows "⚡ InstantFile initialized" in console
+- Service worker shows "⚡ FlashDoc initialized" in console
 
 ---
 
@@ -41,7 +41,7 @@ npm run test
 ### 1. Context Menu Tests
 1. [ ] Select text on any webpage (at least 10 characters)
 2. [ ] Right-click on selected text
-3. [ ] Verify "⚡ InstantFile" parent menu appears
+3. [ ] Verify "⚡ FlashDoc" parent menu appears
 4. [ ] Hover over parent menu
 5. [ ] Verify all child menu items appear:
    - ⚡ Auto-detect & Save
@@ -63,19 +63,19 @@ npm run test
 
 6. [ ] Click "Auto-detect & Save"
 7. [ ] Verify download starts
-8. [ ] Check Downloads folder for `InstantFiles/` directory
+8. [ ] Check Downloads folder for `FlashDocs/` directory
 9. [ ] Verify file was created with correct extension
 
 **Expected Behavior:**
 - Context menu appears for selected text
-- File downloads to `InstantFiles/<format>/` folder
+- File downloads to `FlashDocs/<format>/` folder
 - Notification appears (if enabled)
 - File contains correct content
 
 ---
 
 ### 2. Keyboard Shortcut Tests
-Test on `test-instafile.html` or any webpage:
+Test on `test-flashdoc.html` or any webpage:
 
 1. [ ] Select text
 2. [ ] Press `Ctrl+Shift+S` (Cmd+Shift+S on Mac) - Smart Save
@@ -139,7 +139,7 @@ Test on `test-instafile.html` or any webpage:
 ---
 
 ### 5. Format Detection Tests
-Use `test-instafile.html` to test format detection:
+Use `test-flashdoc.html` to test format detection:
 
 1. [ ] **YAML Detection**: Select YAML example block
 2. [ ] Use Auto-detect
@@ -248,7 +248,7 @@ Use `test-instafile.html` to test format detection:
 ## ✅ Permissions Tests
 
 1. [ ] Open `chrome://extensions`
-2. [ ] Click "Details" on InstaFile
+2. [ ] Click "Details" on FlashDoc
 3. [ ] Verify requested permissions:
    - Context menus
    - Downloads

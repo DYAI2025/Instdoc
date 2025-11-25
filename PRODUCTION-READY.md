@@ -1,6 +1,6 @@
 # Production Readiness Report
 
-**Project:** InstaFile Chrome Extension
+**Project:** FlashDoc Chrome Extension
 **Version:** 2.0.0
 **Date:** 2025-11-18
 **Status:** ✅ PRODUCTION READY (with notes)
@@ -9,7 +9,7 @@
 
 ## Executive Summary
 
-InstaFile is a Chrome extension (Manifest V3) that enables users to save selected text as files in multiple formats with intelligent format detection. The extension has been thoroughly tested and is ready for production deployment with some minor recommendations.
+FlashDoc is a Chrome extension (Manifest V3) that enables users to save selected text as files in multiple formats with intelligent format detection. The extension has been thoroughly tested and is ready for production deployment with some minor recommendations.
 
 ---
 
@@ -122,7 +122,7 @@ These tests can be run manually via `tests/test-runner.html` in a browser.
 ✓ popup.html + popup.js + popup.css
 ✓ options.html + options.js + options.css
 ✓ icon16.png, icon48.png, icon128.png
-✓ test-instafile.html (test page)
+✓ test-flashdoc.html (test page)
 ✓ README.md (comprehensive documentation)
 ✓ TESTING.md (test guidelines)
 ✓ package.json (dependencies)
@@ -191,7 +191,7 @@ These tests can be run manually via `tests/test-runner.html` in a browser.
 ### Deployment Steps
 1. **Package Extension**
    ```bash
-   zip -r instafile-v2.0.0.zip . \
+   zip -r flashdoc-v2.0.0.zip . \
      -x 'out/*' '.git/*' 'node_modules/*' 'tests/*' '*.test.js' \
      -x 'package*.json' 'vitest.config.js' '.gitignore'
    ```
@@ -200,7 +200,7 @@ These tests can be run manually via `tests/test-runner.html` in a browser.
    - Upload zip to Chrome Web Store Developer Dashboard
    - Fill in store listing:
      - Description: From README.md
-     - Screenshots: Create from test-instafile.html
+     - Screenshots: Create from test-flashdoc.html
      - Category: Productivity
      - Privacy policy: If collecting data
 
@@ -289,7 +289,7 @@ Future: Add chrome.i18n support for more languages
 ## Support & Maintenance
 
 ### Bug Reporting
-- GitHub Issues: https://github.com/benjiyo/instafile/issues
+- GitHub Issues: https://github.com/benjiyo/flashdoc/issues
 - Include: Chrome version, OS, error messages, steps to reproduce
 
 ### Update Schedule
@@ -301,7 +301,7 @@ Future: Add chrome.i18n support for more languages
 
 ## Conclusion
 
-**InstaFile v2.0.0 is PRODUCTION READY** with the following summary:
+**FlashDoc v2.0.0 is PRODUCTION READY** with the following summary:
 
 ✅ **Strengths:**
 - 36/36 automated tests passing
@@ -340,5 +340,5 @@ The extension is stable, secure, and ready for end users. The identified issues 
 ## Contact
 
 - **Developer:** Benjamin Poersch
-- **Repository:** https://github.com/benjiyo/instafile
+- **Repository:** https://github.com/benjiyo/flashdoc
 - **License:** MIT

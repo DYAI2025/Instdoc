@@ -89,12 +89,12 @@ describe('service worker bootstrap', () => {
   it('creates context menu entries during activation', () => {
     const { create } = context.chrome.contextMenus;
     expect(create).toHaveBeenCalled();
-    const parentMenu = create.mock.calls.find((call) => call[0]?.id === 'instant-file-parent');
+    const parentMenu = create.mock.calls.find((call) => call[0]?.id === 'flashdoc-parent');
     expect(parentMenu).toBeTruthy();
     const childIds = create.mock.calls
-      .filter((call) => call[0]?.parentId === 'instant-file-parent')
+      .filter((call) => call[0]?.parentId === 'flashdoc-parent')
       .map((call) => call[0].id);
-    expect(childIds).toContain('instant-auto');
+    expect(childIds).toContain('flashdoc-auto');
   });
 
   it('opens the onboarding page on fresh install', () => {
