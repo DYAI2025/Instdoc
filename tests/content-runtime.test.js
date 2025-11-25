@@ -3,7 +3,7 @@ import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import vm from 'node:vm';
 
-let InstaFileContent;
+let FlashDocContent;
 let contentContext;
 
 beforeAll(() => {
@@ -20,7 +20,7 @@ beforeAll(() => {
   context.globalThis = context;
   vm.createContext(context);
   vm.runInContext(scriptSource, context);
-  InstaFileContent = context.InstaFileContent;
+  FlashDocContent = context.FlashDocContent;
   contentContext = context;
 });
 
@@ -35,7 +35,7 @@ beforeEach(() => {
 
 describe('content runtime messaging', () => {
   const createInstance = () => {
-    const instance = Object.create(InstaFileContent.prototype);
+    const instance = Object.create(FlashDocContent.prototype);
     instance.runtimeUnavailable = false;
     instance.isRuntimeAvailable = vi.fn(() => true);
     return instance;

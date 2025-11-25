@@ -304,7 +304,7 @@ document.addEventListener('DOMContentLoaded', () => {
   });
 
   helpBtn.addEventListener('click', () => {
-    const helpUrl = manifest.homepage_url || 'https://github.com/benjiyo/instafile';
+    const helpUrl = manifest.homepage_url || 'https://github.com/benjiyo/flashdoc';
     chrome.tabs.create({ url: helpUrl });
   });
 

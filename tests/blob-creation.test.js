@@ -2,10 +2,10 @@
 // Tests for createBlob, MIME type mapping, and filename generation
 
 describe('Blob Creation Tests', () => {
-  let instantFile;
+  let flashDoc;
 
   beforeEach(() => {
-    instantFile = {
+    flashDoc = {
       createBlob: function(content, extension) {
         if (extension === 'pdf' || extension === 'label') {
           // Mock PDF creation
@@ -58,7 +58,7 @@ describe('Blob Creation Tests', () => {
 
             return firstLine && firstLine.length > 3
               ? `${firstLine}.${fileExtension}`
-              : `instant_${timestamp}.${fileExtension}`;
+              : `flashdoc_${timestamp}.${fileExtension}`;
           }
 
           case 'custom': {
@@ -71,7 +71,7 @@ describe('Blob Creation Tests', () => {
 
           case 'timestamp':
           default:
-            return `instant_${timestamp}.${fileExtension}`;
+            return `flashdoc_${timestamp}.${fileExtension}`;
         }
       }
     };
@@ -79,37 +79,37 @@ describe('Blob Creation Tests', () => {
 
   describe('MIME Type Mapping', () => {
     test('should map TypeScript to correct MIME type', () => {
-      const result = instantFile.createBlob('const x: string = "test"', 'ts');
+      const result = flashDoc.createBlob('const x: string = "test"', 'ts');
       expect(result.mimeType).toBe('text/typescript;charset=utf-8');
     });
 
     test('should map XML to correct MIME type', () => {
-      const result = instantFile.createBlob('<?xml version="1.0"?>', 'xml');
+      const result = flashDoc.createBlob('<?xml version="1.0"?>', 'xml');
       expect(result.mimeType).toBe('application/xml;charset=utf-8');
     });
 
     test('should map SQL to correct MIME type', () => {
-      const result = instantFile.createBlob('SELECT * FROM users', 'sql');
+      const result = flashDoc.createBlob('SELECT * FROM users', 'sql');
       expect(result.mimeType).toBe('application/sql;charset=utf-8');
     });
 
     test('should map Shell script to correct MIME type', () => {
-      const result = instantFile.createBlob('#!/bin/bash', 'sh');
+      const result = flashDoc.createBlob('#!/bin/bash', 'sh');
       expect(result.mimeType).toBe('application/x-sh;charset=utf-8');
     });
 
     test('should map CSS to correct MIME type', () => {
-      const result = instantFile.createBlob('.class { color: red; }', 'css');
+      const result = flashDoc.createBlob('.class { color: red; }', 'css');
       expect(result.mimeType).toBe('text/css;charset=utf-8');
     });
 
     test('should map JSON to correct MIME type', () => {
-      const result = instantFile.createBlob('{"key": "value"}', 'json');
+      const result = flashDoc.createBlob('{"key": "value"}', 'json');
       expect(result.mimeType).toBe('application/json;charset=utf-8');
     });
 
     test('should handle unknown extensions with default MIME type', () => {
-      const result = instantFile.createBlob('content', 'unknown');
+      const result = flashDoc.createBlob('content', 'unknown');
       expect(result.mimeType).toBe('text/plain;charset=utf-8');
     });
   });
@@ -117,61 +117,61 @@ describe('Blob Creation Tests', () => {
   describe('Blob Content Creation', () => {
     test('should create blob with correct content', () => {
       const content = 'Test content';
-      const result = instantFile.createBlob(content, 'txt');
+      const result = flashDoc.createBlob(content, 'txt');
       expect(result.blob).toBeDefined();
       expect(result.blob.type).toBe('text/plain;charset=utf-8');
     });
 
     test('should create blob for TypeScript', () => {
       const content = 'const x: number = 5;';
-      const result = instantFile.createBlob(content, 'ts');
+      const result = flashDoc.createBlob(content, 'ts');
       expect(result.blob).toBeDefined();
       expect(result.mimeType).toBe('text/typescript;charset=utf-8');
     });
 
     test('should handle empty content', () => {
-      const result = instantFile.createBlob('', 'txt');
+      const result = flashDoc.createBlob('', 'txt');
       expect(result.blob).toBeDefined();
     });
 
     test('should handle special characters', () => {
       const content = 'Special chars: €£¥©®™';
-      const result = instantFile.createBlob(content, 'txt');
+      const result = flashDoc.createBlob(content, 'txt');
       expect(result.blob).toBeDefined();
     });
   });
 
   describe('PDF Creation', () => {
     test('should create PDF blob for pdf extension', () => {
-      const result = instantFile.createBlob('Test content', 'pdf');
+      const result = flashDoc.createBlob('Test content', 'pdf');
       expect(result.mimeType).toBe('application/pdf');
       expect(result.blob.type).toBe('application/pdf');
     });
 
     test('should create label PDF for label extension', () => {
-      const result = instantFile.createBlob('Label text', 'label');
+      const result = flashDoc.createBlob('Label text', 'label');
       expect(result.mimeType).toBe('application/pdf');
     });
   });
 
   describe('Filename Generation - Timestamp', () => {
     beforeEach(() => {
-      instantFile.namingPattern = 'timestamp';
+      flashDoc.namingPattern = 'timestamp';
     });
 
     test('should generate filename with timestamp', () => {
-      const filename = instantFile.generateFilename('content', 'txt', null);
-      expect(filename).toMatch(/^instant_\d{4}-\d{2}-\d{2}_\d{2}-\d{2}-\d{2}\.txt$/);
+      const filename = flashDoc.generateFilename('content', 'txt', null);
+      expect(filename).toMatch(/^flashdoc_\d{4}-\d{2}-\d{2}_\d{2}-\d{2}-\d{2}\.txt$/);
     });
 
     test('should use correct extension for label PDFs', () => {
-      const filename = instantFile.generateFilename('content', 'label', null);
+      const filename = flashDoc.generateFilename('content', 'label', null);
       expect(filename).toMatch(/\.pdf$/);
     });
 
     test('should generate different filenames for different extensions', () => {
-      const txtFile = instantFile.generateFilename('content', 'txt', null);
-      const tsFile = instantFile.generateFilename('content', 'ts', null);
+      const txtFile = flashDoc.generateFilename('content', 'txt', null);
+      const tsFile = flashDoc.generateFilename('content', 'ts', null);
       expect(txtFile).toMatch(/\.txt$/);
       expect(tsFile).toMatch(/\.ts$/);
     });
@@ -179,66 +179,66 @@ describe('Blob Creation Tests', () => {
 
   describe('Filename Generation - First Line', () => {
     beforeEach(() => {
-      instantFile.namingPattern = 'firstline';
+      flashDoc.namingPattern = 'firstline';
     });
 
     test('should use first line as filename', () => {
       const content = 'My Important Document\nRest of content';
-      const filename = instantFile.generateFilename(content, 'txt', null);
+      const filename = flashDoc.generateFilename(content, 'txt', null);
       expect(filename).toBe('my_important_document.txt');
     });
 
     test('should sanitize special characters', () => {
       const content = 'File@Name#With$Special%Chars!\nContent';
-      const filename = instantFile.generateFilename(content, 'txt', null);
+      const filename = flashDoc.generateFilename(content, 'txt', null);
       expect(filename).toMatch(/^file_name_with_special_chars\.txt$/);
     });
 
     test('should handle empty first line', () => {
       const content = '\nSecond line';
-      const filename = instantFile.generateFilename(content, 'txt', null);
-      expect(filename).toMatch(/^instant_\d{4}/);
+      const filename = flashDoc.generateFilename(content, 'txt', null);
+      expect(filename).toMatch(/^flashdoc_\d{4}/);
     });
 
     test('should handle very long first lines', () => {
       const content = 'A'.repeat(100) + '\nContent';
-      const filename = instantFile.generateFilename(content, 'txt', null);
+      const filename = flashDoc.generateFilename(content, 'txt', null);
       expect(filename.length).toBeLessThanOrEqual(54); // 50 chars + .txt
     });
 
     test('should fall back to timestamp for short names', () => {
       const content = 'ab\nContent';
-      const filename = instantFile.generateFilename(content, 'txt', null);
-      expect(filename).toMatch(/^instant_\d{4}/);
+      const filename = flashDoc.generateFilename(content, 'txt', null);
+      expect(filename).toMatch(/^flashdoc_\d{4}/);
     });
   });
 
   describe('Filename Generation - Custom Pattern', () => {
     beforeEach(() => {
-      instantFile.namingPattern = 'custom';
+      flashDoc.namingPattern = 'custom';
     });
 
     test('should use custom pattern with date', () => {
-      instantFile.customPattern = 'file_{date}';
-      const filename = instantFile.generateFilename('content', 'txt', null);
+      flashDoc.customPattern = 'file_{date}';
+      const filename = flashDoc.generateFilename('content', 'txt', null);
       expect(filename).toMatch(/^file_\d{4}-\d{2}-\d{2}\.txt$/);
     });
 
     test('should use custom pattern with type', () => {
-      instantFile.customPattern = 'doc_{type}';
-      const filename = instantFile.generateFilename('content', 'ts', null);
+      flashDoc.customPattern = 'doc_{type}';
+      const filename = flashDoc.generateFilename('content', 'ts', null);
       expect(filename).toMatch(/^doc_ts\.ts$/);
     });
 
     test('should use custom pattern with date and time', () => {
-      instantFile.customPattern = 'backup_{date}_{time}';
-      const filename = instantFile.generateFilename('content', 'json', null);
+      flashDoc.customPattern = 'backup_{date}_{time}';
+      const filename = flashDoc.generateFilename('content', 'json', null);
       expect(filename).toMatch(/^backup_\d{4}-\d{2}-\d{2}_\d{2}-\d{2}-\d{2}\.json$/);
     });
 
     test('should handle custom pattern without placeholders', () => {
-      instantFile.customPattern = 'myfile';
-      const filename = instantFile.generateFilename('content', 'txt', null);
+      flashDoc.customPattern = 'myfile';
+      const filename = flashDoc.generateFilename('content', 'txt', null);
       expect(filename).toBe('myfile.txt');
     });
   });

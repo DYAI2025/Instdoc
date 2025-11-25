@@ -1,6 +1,6 @@
-# InstaFile Test Suite
+# FlashDoc Test Suite
 
-Automated tests for critical handover points in the InstaFile Chrome extension.
+Automated tests for critical handover points in the FlashDoc Chrome extension.
 
 ## Test Coverage
 
@@ -25,7 +25,7 @@ Tests file creation and handling:
 - **Blob Content Creation** - Content encoding, special characters
 - **PDF Generation** - Regular PDFs and label PDFs
 - **Filename Generation** - Three naming strategies:
-  - Timestamp: `instant_YYYY-MM-DD_HH-MM-SS.ext`
+  - Timestamp: `flashdoc_YYYY-MM-DD_HH-MM-SS.ext`
   - First Line: Sanitized first line of content
   - Custom Pattern: User-defined with tokens `{date}`, `{time}`, `{type}`
 
@@ -89,7 +89,7 @@ To add tests for a new format:
 describe('NewFormat Detection', () => {
   test('should detect new format', () => {
     const code = `// new format code`;
-    expect(instantFile.isNewFormat(code)).toBe(true);
+    expect(flashDoc.isNewFormat(code)).toBe(true);
   });
 });
 ```
@@ -97,7 +97,7 @@ describe('NewFormat Detection', () => {
 2. **Blob Creation** - Add MIME type test to `blob-creation.test.js`:
 ```javascript
 test('should map NewFormat to correct MIME type', () => {
-  const result = instantFile.createBlob('content', 'newformat');
+  const result = flashDoc.createBlob('content', 'newformat');
   expect(result.mimeType).toBe('text/newformat;charset=utf-8');
 });
 ```
@@ -152,4 +152,4 @@ Update tests when:
 
 ## License
 
-Same as InstaFile extension - see main README.md
+Same as FlashDoc extension - see main README.md

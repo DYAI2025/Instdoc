@@ -90,7 +90,7 @@ describe('Edge Case Tests', () => {
     await flushPromises();
 
     // Helper to get the instantiated object
-    getInstance = () => context.instantFile;
+    getInstance = () => context.flashDoc;
   });
 
   describe('Empty Content Handling', () => {
@@ -156,7 +156,7 @@ describe('Edge Case Tests', () => {
       instance.settings = { ...instance.settings, namingPattern: 'firstline' };
 
       const filename = instance.generateFilename('\n\nsecond line', 'txt', {});
-      expect(filename).toMatch(/instant_.*\.txt/);
+      expect(filename).toMatch(/flashdoc_.*\.txt/);
     });
 
     it('should handle firstline with very long first line', () => {
@@ -182,7 +182,7 @@ describe('Edge Case Tests', () => {
       instance.settings = { ...instance.settings, namingPattern: 'firstline' };
 
       const filename = instance.generateFilename('ab', 'txt', {});
-      expect(filename).toMatch(/instant_.*\.txt/);
+      expect(filename).toMatch(/flashdoc_.*\.txt/);
     });
 
     it('should handle custom pattern with all placeholders', () => {
@@ -290,7 +290,7 @@ describe('Edge Case Tests', () => {
   describe('Settings Edge Cases', () => {
     it('should use defaults when storage is empty', () => {
       const instance = getInstance();
-      expect(instance.settings.folderPath).toBe('InstantFiles/');
+      expect(instance.settings.folderPath).toBe('FlashDocs/');
       expect(instance.settings.namingPattern).toBe('timestamp');
       expect(instance.settings.organizeByType).toBe(true);
     });

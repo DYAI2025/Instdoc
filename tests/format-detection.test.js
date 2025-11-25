@@ -2,11 +2,11 @@
 // Tests for all format detection methods in service-worker.js
 
 describe('Format Detection Tests', () => {
-  let instantFile;
+  let flashDoc;
 
   beforeEach(() => {
-    // Create a mock InstantFile instance for testing
-    instantFile = {
+    // Create a mock FlashDoc instance for testing
+    flashDoc = {
       isYAML: function(content) {
         const yamlPatterns = [
           /^[\w-]+:\s+[\w\s]/m,
@@ -167,7 +167,7 @@ describe('Format Detection Tests', () => {
           age: number;
         }
       `;
-      expect(instantFile.isTypeScript(tsCode)).toBe(true);
+      expect(flashDoc.isTypeScript(tsCode)).toBe(true);
     });
 
     test('should detect TypeScript with React components', () => {
@@ -177,7 +177,7 @@ describe('Format Detection Tests', () => {
           return <div>{state}</div>;
         };
       `;
-      expect(instantFile.isTypeScript(tsxCode)).toBe(true);
+      expect(flashDoc.isTypeScript(tsxCode)).toBe(true);
     });
 
     test('should detect TypeScript with type definitions', () => {
@@ -187,7 +187,7 @@ describe('Format Detection Tests', () => {
           apiUrl: string;
         }
       `;
-      expect(instantFile.isTypeScript(tsCode)).toBe(true);
+      expect(flashDoc.isTypeScript(tsCode)).toBe(true);
     });
 
     test('should not detect plain JavaScript as TypeScript', () => {
@@ -196,7 +196,7 @@ describe('Format Detection Tests', () => {
           console.log("Hello " + name);
         }
       `;
-      expect(instantFile.isTypeScript(jsCode)).toBe(false);
+      expect(flashDoc.isTypeScript(jsCode)).toBe(false);
     });
   });
 
@@ -208,7 +208,7 @@ describe('Format Detection Tests', () => {
           return message;
         }
       `;
-      expect(instantFile.isJavaScript(jsCode)).toBe(true);
+      expect(flashDoc.isJavaScript(jsCode)).toBe(true);
     });
 
     test('should detect modern JavaScript', () => {
@@ -218,7 +218,7 @@ describe('Format Detection Tests', () => {
           console.log(x);
         };
       `;
-      expect(instantFile.isJavaScript(jsCode)).toBe(true);
+      expect(flashDoc.isJavaScript(jsCode)).toBe(true);
     });
   });
 
@@ -231,7 +231,7 @@ describe('Format Detection Tests', () => {
         if __name__ == '__main__':
             main()
       `;
-      expect(instantFile.isPython(pyCode)).toBe(true);
+      expect(flashDoc.isPython(pyCode)).toBe(true);
     });
 
     test('should detect Python classes', () => {
@@ -241,41 +241,41 @@ describe('Format Detection Tests', () => {
                 import sys
                 self.name = "test"
       `;
-      expect(instantFile.isPython(pyCode)).toBe(true);
+      expect(flashDoc.isPython(pyCode)).toBe(true);
     });
   });
 
   describe('JSON Detection', () => {
     test('should detect valid JSON object', () => {
       const jsonCode = `{"name": "test", "value": 123}`;
-      expect(instantFile.isJSON(jsonCode)).toBe(true);
+      expect(flashDoc.isJSON(jsonCode)).toBe(true);
     });
 
     test('should detect valid JSON array', () => {
       const jsonCode = `[1, 2, 3, "test"]`;
-      expect(instantFile.isJSON(jsonCode)).toBe(true);
+      expect(flashDoc.isJSON(jsonCode)).toBe(true);
     });
 
     test('should reject invalid JSON', () => {
       const invalidJson = `{name: test}`;
-      expect(instantFile.isJSON(invalidJson)).toBe(false);
+      expect(flashDoc.isJSON(invalidJson)).toBe(false);
     });
   });
 
   describe('XML Detection', () => {
     test('should detect XML with declaration', () => {
       const xmlCode = `<?xml version="1.0"?><root><item>test</item></root>`;
-      expect(instantFile.isXML(xmlCode)).toBe(true);
+      expect(flashDoc.isXML(xmlCode)).toBe(true);
     });
 
     test('should detect SVG as XML', () => {
       const svgCode = `<svg width="100" height="100"><circle cx="50" cy="50" r="40"/></svg>`;
-      expect(instantFile.isXML(svgCode)).toBe(true);
+      expect(flashDoc.isXML(svgCode)).toBe(true);
     });
 
     test('should detect XML with namespace', () => {
       const xmlCode = `<root xmlns="http://example.com"><item>test</item></root>`;
-      expect(instantFile.isXML(xmlCode)).toBe(true);
+      expect(flashDoc.isXML(xmlCode)).toBe(true);
     });
   });
 
@@ -286,7 +286,7 @@ describe('Format Detection Tests', () => {
         WHERE age > 18
         ORDER BY name;
       `;
-      expect(instantFile.isSQL(sqlCode)).toBe(true);
+      expect(flashDoc.isSQL(sqlCode)).toBe(true);
     });
 
     test('should detect SQL INSERT statements', () => {
@@ -294,7 +294,7 @@ describe('Format Detection Tests', () => {
         INSERT INTO users (name, email)
         VALUES ('John', 'john@example.com')
       `;
-      expect(instantFile.isSQL(sqlCode)).toBe(true);
+      expect(flashDoc.isSQL(sqlCode)).toBe(true);
     });
 
     test('should detect SQL CREATE statements', () => {
@@ -304,7 +304,7 @@ describe('Format Detection Tests', () => {
           name VARCHAR(100)
         );
       `;
-      expect(instantFile.isSQL(sqlCode)).toBe(true);
+      expect(flashDoc.isSQL(sqlCode)).toBe(true);
     });
   });
 
@@ -314,7 +314,7 @@ describe('Format Detection Tests', () => {
         echo "Hello World"
         export PATH=/usr/bin
       `;
-      expect(instantFile.isShellScript(shellCode)).toBe(true);
+      expect(flashDoc.isShellScript(shellCode)).toBe(true);
     });
 
     test('should detect shell scripts with common commands', () => {
@@ -324,7 +324,7 @@ describe('Format Detection Tests', () => {
           echo "File exists"
         fi
       `;
-      expect(instantFile.isShellScript(shellCode)).toBe(true);
+      expect(flashDoc.isShellScript(shellCode)).toBe(true);
     });
 
     test('should detect shell scripts with variables', () => {
@@ -335,19 +335,19 @@ describe('Format Detection Tests', () => {
           echo $file
         done
       `;
-      expect(instantFile.isShellScript(shellCode)).toBe(true);
+      expect(flashDoc.isShellScript(shellCode)).toBe(true);
     });
   });
 
   describe('HTML Detection', () => {
     test('should detect HTML with DOCTYPE', () => {
       const htmlCode = `<!DOCTYPE html><html><head><title>Test</title></head></html>`;
-      expect(instantFile.isHTML(htmlCode)).toBe(true);
+      expect(flashDoc.isHTML(htmlCode)).toBe(true);
     });
 
     test('should detect HTML with body tag', () => {
       const htmlCode = `<body><div>Content</div></body>`;
-      expect(instantFile.isHTML(htmlCode)).toBe(true);
+      expect(flashDoc.isHTML(htmlCode)).toBe(true);
     });
   });
 
@@ -362,7 +362,7 @@ describe('Format Detection Tests', () => {
           background-color: blue;
         }
       `;
-      expect(instantFile.isCSS(cssCode)).toBe(true);
+      expect(flashDoc.isCSS(cssCode)).toBe(true);
     });
 
     test('should detect CSS with media queries', () => {
@@ -373,7 +373,7 @@ describe('Format Detection Tests', () => {
           }
         }
       `;
-      expect(instantFile.isCSS(cssCode)).toBe(true);
+      expect(flashDoc.isCSS(cssCode)).toBe(true);
     });
 
     test('should detect CSS with keyframes', () => {
@@ -383,7 +383,7 @@ describe('Format Detection Tests', () => {
           to { opacity: 1; }
         }
       `;
-      expect(instantFile.isCSS(cssCode)).toBe(true);
+      expect(flashDoc.isCSS(cssCode)).toBe(true);
     });
   });
 
@@ -394,7 +394,7 @@ describe('Format Detection Tests', () => {
         age: 30
         city: New York
       `;
-      expect(instantFile.isYAML(yamlCode)).toBe(true);
+      expect(flashDoc.isYAML(yamlCode)).toBe(true);
     });
 
     test('should detect YAML with lists', () => {
@@ -403,7 +403,7 @@ describe('Format Detection Tests', () => {
           - item1
           - item2
       `;
-      expect(instantFile.isYAML(yamlCode)).toBe(true);
+      expect(flashDoc.isYAML(yamlCode)).toBe(true);
     });
   });
 
@@ -415,7 +415,7 @@ describe('Format Detection Tests', () => {
         [Link](https://example.com)
         - List item
       `;
-      expect(instantFile.isMarkdown(mdCode)).toBe(true);
+      expect(flashDoc.isMarkdown(mdCode)).toBe(true);
     });
 
     test('should detect Markdown with code blocks', () => {
@@ -425,7 +425,7 @@ describe('Format Detection Tests', () => {
         console.log("test");
         \`\`\`
       `;
-      expect(instantFile.isMarkdown(mdCode)).toBe(true);
+      expect(flashDoc.isMarkdown(mdCode)).toBe(true);
     });
   });
 
@@ -434,26 +434,26 @@ describe('Format Detection Tests', () => {
       const csvCode = `name,age,city
 John,30,New York
 Jane,25,Boston`;
-      expect(instantFile.isCSV(csvCode)).toBe(true);
+      expect(flashDoc.isCSV(csvCode)).toBe(true);
     });
 
     test('should detect CSV with semicolon delimiter', () => {
       const csvCode = `name;age;city
 John;30;New York
 Jane;25;Boston`;
-      expect(instantFile.isCSV(csvCode)).toBe(true);
+      expect(flashDoc.isCSV(csvCode)).toBe(true);
     });
 
     test('should reject single line as CSV', () => {
       const csvCode = `name,age,city`;
-      expect(instantFile.isCSV(csvCode)).toBe(false);
+      expect(flashDoc.isCSV(csvCode)).toBe(false);
     });
 
     test('should reject inconsistent columns', () => {
       const csvCode = `name,age
 John,30,New York
 Jane,25`;
-      expect(instantFile.isCSV(csvCode)).toBe(false);
+      expect(flashDoc.isCSV(csvCode)).toBe(false);
     });
   });
 });

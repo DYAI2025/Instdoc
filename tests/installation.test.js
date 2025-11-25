@@ -156,15 +156,15 @@ describe('Installation Tests', () => {
       }).not.toThrow();
     });
 
-    it('service-worker.js should initialize InstantFile class', () => {
+    it('service-worker.js should initialize FlashDoc class', () => {
       const code = readFileSync(resolve(projectRoot, 'service-worker.js'), 'utf8');
-      expect(code).toContain('class InstantFile');
-      expect(code).toContain('new InstantFile()');
+      expect(code).toContain('class FlashDoc');
+      expect(code).toContain('new FlashDoc()');
     });
 
-    it('content.js should initialize InstaFileContent class', () => {
+    it('content.js should initialize FlashDocContent class', () => {
       const code = readFileSync(resolve(projectRoot, 'content.js'), 'utf8');
-      expect(code).toContain('class InstaFileContent');
+      expect(code).toContain('class FlashDocContent');
     });
 
     it('popup.js should handle chrome storage', () => {

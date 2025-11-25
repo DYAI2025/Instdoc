@@ -42,7 +42,7 @@ describe('Settings Integration Tests', () => {
   describe('Default Settings', () => {
     test('should have all required default settings', () => {
       const defaults = {
-        folderPath: 'InstantFiles/',
+        folderPath: 'FlashDocs/',
         namingPattern: 'timestamp',
         customPattern: 'file_{date}',
         organizeByType: true,
@@ -68,7 +68,7 @@ describe('Settings Integration Tests', () => {
 
     test('should have valid default values', () => {
       const defaults = {
-        folderPath: 'InstantFiles/',
+        folderPath: 'FlashDocs/',
         namingPattern: 'timestamp',
         selectionThreshold: 10,
         buttonPosition: 'bottom-right'
@@ -110,7 +110,7 @@ describe('Settings Integration Tests', () => {
 
     test('should merge with default settings on load', () => {
       const defaults = {
-        folderPath: 'InstantFiles/',
+        folderPath: 'FlashDocs/',
         autoDetectType: true,
         trackFormatUsage: true
       };

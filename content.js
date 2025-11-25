@@ -1,7 +1,7 @@
-// InstaFile Content Script - Enhanced Selection Detection & Floating UI
+// FlashDoc Content Script - Enhanced Selection Detection & Floating UI
 // Zero-friction file creation with intelligent format detection
 
-class InstaFileContent {
+class FlashDocContent {
   constructor() {
     this.selectedText = '';
     this.floatingButton = null;
@@ -29,7 +29,7 @@ class InstaFileContent {
       this.createFloatingButton();
     }
     
-    console.log('⚡ InstaFile content script initialized');
+    console.log('⚡ FlashDoc content script initialized');
   }
 
   async loadSettings() {
@@ -65,8 +65,8 @@ class InstaFileContent {
     // Mouse up for immediate feedback
     document.addEventListener('mouseup', (e) => {
       // Skip if clicking on our UI elements
-      if (e.target.closest('.instafile-floating') || 
-          e.target.closest('.instafile-contextual')) {
+      if (e.target.closest('.flashdoc-floating') || 
+          e.target.closest('.flashdoc-contextual')) {
         return;
       }
       
@@ -134,7 +134,7 @@ class InstaFileContent {
     
     // Create elegant highlight overlay
     const highlight = document.createElement('div');
-    highlight.className = 'instafile-highlight';
+    highlight.className = 'flashdoc-highlight';
     highlight.style.cssText = `
       position: fixed;
       top: ${rect.top}px;
@@ -152,7 +152,7 @@ class InstaFileContent {
   }
 
   removeHighlight() {
-    document.querySelectorAll('.instafile-highlight').forEach(el => el.remove());
+    document.querySelectorAll('.flashdoc-highlight').forEach(el => el.remove());
   }
 
   // Contextual Save Button
@@ -164,14 +164,14 @@ class InstaFileContent {
     const detectedType = this.detectContentType(text);
     
     const button = document.createElement('div');
-    button.className = 'instafile-contextual';
+    button.className = 'flashdoc-contextual';
     button.innerHTML = `
-      <div class="instafile-ctx-main">
-        <span class="instafile-ctx-icon">⚡</span>
-        <span class="instafile-ctx-text">Save</span>
-        <span class="instafile-ctx-type">${detectedType.toUpperCase()}</span>
+      <div class="flashdoc-ctx-main">
+        <span class="flashdoc-ctx-icon">⚡</span>
+        <span class="flashdoc-ctx-text">Save</span>
+        <span class="flashdoc-ctx-type">${detectedType.toUpperCase()}</span>
       </div>
-      <div class="instafile-ctx-options">
+      <div class="flashdoc-ctx-options">
         <button data-format="txt" title="Text">📄</button>
         <button data-format="md" title="Markdown">📝</button>
         <button data-format="pdf" title="PDF">📕</button>
@@ -199,13 +199,13 @@ class InstaFileContent {
     button.style.top = `${posY}px`;
     
     // Event handlers
-    button.querySelector('.instafile-ctx-main').addEventListener('click', (e) => {
+    button.querySelector('.flashdoc-ctx-main').addEventListener('click', (e) => {
       e.stopPropagation();
       this.quickSave();
       this.hideContextualButton();
     });
     
-    button.querySelectorAll('.instafile-ctx-options button').forEach(btn => {
+    button.querySelectorAll('.flashdoc-ctx-options button').forEach(btn => {
       btn.addEventListener('click', (e) => {
         e.stopPropagation();
         this.saveWithFormat(btn.dataset.format);
@@ -223,8 +223,8 @@ class InstaFileContent {
 
   hideContextualButton() {
     clearTimeout(this.contextualTimeout);
-    document.querySelectorAll('.instafile-contextual').forEach(el => {
-      el.style.animation = 'instafile-fade-out 0.2s ease-out';
+    document.querySelectorAll('.flashdoc-contextual').forEach(el => {
+      el.style.animation = 'flashdoc-fade-out 0.2s ease-out';
       setTimeout(() => el.remove(), 200);
     });
   }
@@ -234,41 +234,41 @@ class InstaFileContent {
     if (this.floatingButton) return;
     
     const button = document.createElement('div');
-    button.className = 'instafile-floating';
+    button.className = 'flashdoc-floating';
     button.innerHTML = `
-      <div class="instafile-fab">
-        <div class="instafile-fab-icon">
-          <span class="instafile-fab-bolt">⚡</span>
-          <span class="instafile-fab-save" style="display:none">💾</span>
+      <div class="flashdoc-fab">
+        <div class="flashdoc-fab-icon">
+          <span class="flashdoc-fab-bolt">⚡</span>
+          <span class="flashdoc-fab-save" style="display:none">💾</span>
         </div>
-        <div class="instafile-fab-menu">
-          <button data-format="smart" class="instafile-fab-option" title="Smart Save">
+        <div class="flashdoc-fab-menu">
+          <button data-format="smart" class="flashdoc-fab-option" title="Smart Save">
             <span>🎯</span>
             <label>Auto</label>
           </button>
-          <button data-format="txt" class="instafile-fab-option" title="Text">
+          <button data-format="txt" class="flashdoc-fab-option" title="Text">
             <span>📄</span>
             <label>TXT</label>
           </button>
-          <button data-format="md" class="instafile-fab-option" title="Markdown">
+          <button data-format="md" class="flashdoc-fab-option" title="Markdown">
             <span>📝</span>
             <label>MD</label>
           </button>
-          <button data-format="pdf" class="instafile-fab-option" title="PDF">
+          <button data-format="pdf" class="flashdoc-fab-option" title="PDF">
             <span>📕</span>
             <label>PDF</label>
           </button>
-          <button data-format="saveas" class="instafile-fab-option" title="Save As">
+          <button data-format="saveas" class="flashdoc-fab-option" title="Save As">
             <span>📁</span>
             <label>Save As</label>
           </button>
-          <button data-format="code" class="instafile-fab-option" title="Code">
+          <button data-format="code" class="flashdoc-fab-option" title="Code">
             <span>👨‍💻</span>
             <label>Code</label>
           </button>
         </div>
       </div>
-      <div class="instafile-fab-counter" title="Total files saved">0</div>
+      <div class="flashdoc-fab-counter" title="Total files saved">0</div>
     `;
     
     // Position based on settings
@@ -283,8 +283,8 @@ class InstaFileContent {
     Object.assign(button.style, pos);
     
     // Setup interactions
-    const fabIcon = button.querySelector('.instafile-fab-icon');
-    const fabMenu = button.querySelector('.instafile-fab-menu');
+    const fabIcon = button.querySelector('.flashdoc-fab-icon');
+    const fabMenu = button.querySelector('.flashdoc-fab-menu');
     
     fabIcon.addEventListener('click', () => {
       if (this.selectedText) {
@@ -298,7 +298,7 @@ class InstaFileContent {
     
     // Menu options
     fabMenu.addEventListener('click', (e) => {
-      const option = e.target.closest('.instafile-fab-option');
+      const option = e.target.closest('.flashdoc-fab-option');
       if (option) {
         const format = option.dataset.format;
         if (format === 'code') {
@@ -313,7 +313,7 @@ class InstaFileContent {
     
     // Close menu on outside click
     document.addEventListener('click', (e) => {
-      if (!e.target.closest('.instafile-floating')) {
+      if (!e.target.closest('.flashdoc-floating')) {
         fabMenu.classList.remove('show');
       }
     });
@@ -328,9 +328,9 @@ class InstaFileContent {
   updateFloatingButton(hasSelection, text = '') {
     if (!this.floatingButton) return;
     
-    const boltIcon = this.floatingButton.querySelector('.instafile-fab-bolt');
-    const saveIcon = this.floatingButton.querySelector('.instafile-fab-save');
-    const fabIcon = this.floatingButton.querySelector('.instafile-fab-icon');
+    const boltIcon = this.floatingButton.querySelector('.flashdoc-fab-bolt');
+    const saveIcon = this.floatingButton.querySelector('.flashdoc-fab-save');
+    const fabIcon = this.floatingButton.querySelector('.flashdoc-fab-icon');
     
     if (hasSelection) {
       boltIcon.style.display = 'none';
@@ -341,14 +341,14 @@ class InstaFileContent {
       boltIcon.style.display = 'block';
       saveIcon.style.display = 'none';
       fabIcon.classList.remove('active');
-      fabIcon.title = 'InstaFile - Click for options';
+      fabIcon.title = 'FlashDoc - Click for options';
     }
   }
 
   async updateButtonStats() {
     if (!this.floatingButton || !this.isRuntimeAvailable()) return;
 
-    const counter = this.floatingButton.querySelector('.instafile-fab-counter');
+    const counter = this.floatingButton.querySelector('.flashdoc-fab-counter');
     if (!counter) return;
 
     try {
@@ -370,7 +370,7 @@ class InstaFileContent {
   isRuntimeAvailable() {
     if (typeof chrome === 'undefined' || !chrome.runtime || typeof chrome.runtime.sendMessage !== 'function') {
       if (!this.runtimeUnavailable) {
-        console.warn('InstaFile runtime unavailable: background messaging disabled');
+        console.warn('FlashDoc runtime unavailable: background messaging disabled');
         this.runtimeUnavailable = true;
       }
       return false;
@@ -568,10 +568,10 @@ class InstaFileContent {
   // Visual Feedback
   showToast(message, type = 'info') {
     // Remove existing toasts
-    document.querySelectorAll('.instafile-toast').forEach(t => t.remove());
+    document.querySelectorAll('.flashdoc-toast').forEach(t => t.remove());
     
     const toast = document.createElement('div');
-    toast.className = `instafile-toast instafile-toast-${type}`;
+    toast.className = `flashdoc-toast flashdoc-toast-${type}`;
     toast.textContent = message;
     
     document.body.appendChild(toast);
@@ -589,7 +589,7 @@ class InstaFileContent {
   addSaveAnimation() {
     if (!this.floatingButton) return;
     
-    const icon = this.floatingButton.querySelector('.instafile-fab-icon');
+    const icon = this.floatingButton.querySelector('.flashdoc-fab-icon');
     icon.classList.add('success');
     
     setTimeout(() => {
@@ -640,15 +640,15 @@ class InstaFileContent {
   // Style Injection
   injectStyles() {
     const style = document.createElement('style');
-    style.id = 'instafile-styles';
+    style.id = 'flashdoc-styles';
     style.textContent = `
       /* Animations */
-      @keyframes instafile-pulse {
+      @keyframes flashdoc-pulse {
         0%, 100% { opacity: 1; }
         50% { opacity: 0.7; }
       }
       
-      @keyframes instafile-slide-in {
+      @keyframes flashdoc-slide-in {
         from { 
           opacity: 0;
           transform: translateY(10px);
@@ -659,36 +659,36 @@ class InstaFileContent {
         }
       }
       
-      @keyframes instafile-fade-out {
+      @keyframes flashdoc-fade-out {
         from { opacity: 1; }
         to { opacity: 0; }
       }
       
-      @keyframes instafile-success-bounce {
+      @keyframes flashdoc-success-bounce {
         0%, 100% { transform: scale(1) rotate(0deg); }
         25% { transform: scale(1.2) rotate(5deg); }
         75% { transform: scale(1.1) rotate(-5deg); }
       }
       
       /* Highlight */
-      .instafile-highlight {
+      .flashdoc-highlight {
         background: linear-gradient(135deg, 
           rgba(102, 126, 234, 0.1), 
           rgba(118, 75, 162, 0.1));
         border: 2px solid rgba(102, 126, 234, 0.3);
         border-radius: 4px;
-        animation: instafile-pulse 2s ease-in-out infinite;
+        animation: flashdoc-pulse 2s ease-in-out infinite;
       }
       
       /* Contextual Button */
-      .instafile-contextual {
+      .flashdoc-contextual {
         position: fixed;
         z-index: 999999;
         font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-        animation: instafile-slide-in 0.2s ease-out;
+        animation: flashdoc-slide-in 0.2s ease-out;
       }
       
-      .instafile-ctx-main {
+      .flashdoc-ctx-main {
         display: flex;
         align-items: center;
         gap: 8px;
@@ -702,16 +702,16 @@ class InstaFileContent {
         font-size: 14px;
       }
       
-      .instafile-ctx-main:hover {
+      .flashdoc-ctx-main:hover {
         transform: translateY(-2px);
         box-shadow: 0 6px 20px rgba(102, 126, 234, 0.6);
       }
       
-      .instafile-ctx-icon {
+      .flashdoc-ctx-icon {
         font-size: 18px;
       }
       
-      .instafile-ctx-type {
+      .flashdoc-ctx-type {
         background: rgba(255, 255, 255, 0.2);
         padding: 2px 8px;
         border-radius: 10px;
@@ -720,14 +720,14 @@ class InstaFileContent {
         letter-spacing: 0.5px;
       }
       
-      .instafile-ctx-options {
+      .flashdoc-ctx-options {
         display: flex;
         gap: 4px;
         margin-top: 4px;
         padding: 0 8px;
       }
       
-      .instafile-ctx-options button {
+      .flashdoc-ctx-options button {
         width: 32px;
         height: 32px;
         border: none;
@@ -739,19 +739,19 @@ class InstaFileContent {
         transition: all 0.2s;
       }
       
-      .instafile-ctx-options button:hover {
+      .flashdoc-ctx-options button:hover {
         transform: scale(1.15);
         box-shadow: 0 4px 10px rgba(0,0,0,0.2);
       }
       
       /* Floating Button */
-      .instafile-floating {
+      .flashdoc-floating {
         position: fixed;
         z-index: 999996;
         font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
       }
       
-      .instafile-fab-icon {
+      .flashdoc-fab-icon {
         width: 56px;
         height: 56px;
         background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
@@ -766,21 +766,21 @@ class InstaFileContent {
         position: relative;
       }
       
-      .instafile-fab-icon:hover {
+      .flashdoc-fab-icon:hover {
         transform: scale(1.1);
         box-shadow: 0 6px 20px rgba(102, 126, 234, 0.6);
       }
       
-      .instafile-fab-icon.active {
+      .flashdoc-fab-icon.active {
         background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
-        animation: instafile-pulse 2s infinite;
+        animation: flashdoc-pulse 2s infinite;
       }
       
-      .instafile-fab-icon.success {
-        animation: instafile-success-bounce 0.6s ease-out;
+      .flashdoc-fab-icon.success {
+        animation: flashdoc-success-bounce 0.6s ease-out;
       }
       
-      .instafile-fab-menu {
+      .flashdoc-fab-menu {
         position: absolute;
         bottom: 70px;
         right: 0;
@@ -793,13 +793,13 @@ class InstaFileContent {
         transition: all 0.3s;
       }
       
-      .instafile-fab-menu.show {
+      .flashdoc-fab-menu.show {
         opacity: 1;
         pointer-events: auto;
         transform: scale(1) translateY(0);
       }
       
-      .instafile-fab-option {
+      .flashdoc-fab-option {
         display: flex;
         align-items: center;
         gap: 8px;
@@ -813,24 +813,24 @@ class InstaFileContent {
         white-space: nowrap;
       }
       
-      .instafile-fab-option:hover {
+      .flashdoc-fab-option:hover {
         transform: translateX(-4px);
         box-shadow: 0 4px 12px rgba(0,0,0,0.2);
         background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
         color: white;
       }
       
-      .instafile-fab-option span {
+      .flashdoc-fab-option span {
         font-size: 18px;
       }
       
-      .instafile-fab-option label {
+      .flashdoc-fab-option label {
         font-size: 12px;
         font-weight: 600;
         cursor: pointer;
       }
       
-      .instafile-fab-counter {
+      .flashdoc-fab-counter {
         position: absolute;
         top: -8px;
         right: -8px;
@@ -846,7 +846,7 @@ class InstaFileContent {
       }
       
       /* Toast Notifications */
-      .instafile-toast {
+      .flashdoc-toast {
         position: fixed;
         bottom: 100px;
         right: 20px;
@@ -863,19 +863,19 @@ class InstaFileContent {
         z-index: 999999;
       }
       
-      .instafile-toast.show {
+      .flashdoc-toast.show {
         transform: translateX(0);
       }
       
-      .instafile-toast-success {
+      .flashdoc-toast-success {
         background: linear-gradient(135deg, #56ab2f 0%, #a8e063 100%);
       }
       
-      .instafile-toast-error {
+      .flashdoc-toast-error {
         background: linear-gradient(135deg, #e53935 0%, #e35d5b 100%);
       }
       
-      .instafile-toast-warning {
+      .flashdoc-toast-warning {
         background: linear-gradient(135deg, #f57c00 0%, #ffb74d 100%);
       }
     `;
@@ -886,20 +886,20 @@ class InstaFileContent {
 
 // Expose constructor for automated tests
 if (typeof globalThis !== 'undefined') {
-  globalThis.InstaFileContent = InstaFileContent;
+  globalThis.FlashDocContent = FlashDocContent;
 }
 
-// Initialize InstaFile when DOM APIs are available
+// Initialize FlashDoc when DOM APIs are available
 if (typeof document !== 'undefined' && typeof document.addEventListener === 'function') {
-  const instaFile = new InstaFileContent();
+  const flashDocContent = new FlashDocContent();
 
   // Page visibility listener for stats refresh
   document.addEventListener('visibilitychange', () => {
     if (!document.hidden) {
-      instaFile.updateButtonStats();
+      flashDocContent.updateButtonStats();
     }
   });
 
   // Log initialization
-  console.log('⚡ InstaFile content script loaded - Zero-friction file creation ready');
+  console.log('⚡ FlashDoc content script loaded - Zero-friction file creation ready');
 }

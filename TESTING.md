@@ -11,10 +11,10 @@
 - **Ereignislebensdauer:** Überwache `service-worker.js`-Logs; der Worker soll nach Ereignisabschluss schlafen und bei Aktionen (Kontextmenü/Shortcut) deterministisch aufwachen.
 
 ## Funktionspfade validieren
-- **Kontextmenü-Speichern:** Rechtsklick → InstantFiles-Eintrag, Inhalt speichern, Download-Ordner `InstantFiles/<Typ>` prüfen.
+- **Kontextmenü-Speichern:** Rechtsklick → FlashDocs-Eintrag, Inhalt speichern, Download-Ordner `FlashDocs/<Typ>` prüfen.
 - **Tastenkürzel:** Hinterlegte Tastenkombi auslösen (`chrome://extensions/shortcuts`), sicherstellen, dass Downloads ohne UI-Fehler starten.
 - **Popup-Aktion:** Popup öffnen, Speichervorgang auslösen, Erfolgs-/Fehlerstatus verifizieren.
-- **Content-Erkennung:** Auf `test-instafile.html` alle Beispielblöcke (YAML, JSON, Markdown, Python) markieren und korrektes Autotyp-Label prüfen.
+- **Content-Erkennung:** Auf `test-flashdoc.html` alle Beispielblöcke (YAML, JSON, Markdown, Python) markieren und korrektes Autotyp-Label prüfen.
 - **Adresslabel 89x28:** Auswahl mit max. vier Zeilen markieren, über Popup oder Kontextmenü als Label speichern und PDF-Größe sowie Zeilenumbrüche prüfen.
 
 ## Regressions- und Fehlerpfade
@@ -25,4 +25,4 @@
 ## Abschlusschecks
 - Service-Worker-Konsole auf Exceptions prüfen; keine `Unchecked runtime.lastError`-Meldungen.
 - Manifest validieren: `npx chrome-manifest-validator manifest.json` (experimentell) oder Upload-Precheck im Chrome Web Store Dashboard.
-- Abschließend `zip -r out/instafile.zip . -x 'out/*' '.git/*'` erstellen und in sauberem Profil testen.
+- Abschließend `zip -r out/flashdoc.zip . -x 'out/*' '.git/*'` erstellen und in sauberem Profil testen.
