@@ -6,7 +6,8 @@ export default defineConfig({
     include: [
       'tests/content-runtime.test.js',
       'tests/service-worker.test.js',
-      'tests/installation.test.js'
+      'tests/installation.test.js',
+      'tests/build-and-package.test.js'
     ],
     exclude: [
       'tests/format-detection.test.js',
