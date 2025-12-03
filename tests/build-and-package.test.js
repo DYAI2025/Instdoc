@@ -14,7 +14,7 @@ describe('Build and packaging', () => {
     rmSync(zipPath, { recursive: true, force: true });
   });
 
-  it('builds extension assets without dev artefacts', () => {
+  it('builds extension assets without dev artifacts', () => {
     const builtPath = buildExtension({ projectRoot, outputDir: buildDir });
 
     expect(builtPath).toBe(buildDir);
