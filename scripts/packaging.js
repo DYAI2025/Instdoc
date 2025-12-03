@@ -2,7 +2,7 @@ import { cpSync, existsSync, mkdirSync, readdirSync, rmSync } from 'node:fs';
 import { dirname, resolve } from 'node:path';
 import AdmZip from 'adm-zip';
 
-const defaultExcludes = new Set(['.git', 'node_modules', 'out']);
+const defaultExcludes = new Set(['.git', '.github', 'node_modules', 'out']);
 const excludedTopLevel = new Set(['tests', 'scripts']);
 const excludedFiles = new Set([
   'package-lock.json',
