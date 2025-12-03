@@ -3,9 +3,12 @@
   "version": "1.0.0",
   "type": "module",
   "scripts": {
-    "test": "vitest"
+    "test": "vitest",
+    "build": "node scripts/build-extension.js",
+    "package": "node scripts/package-extension.js"
   },
   "devDependencies": {
+    "adm-zip": "^0.5.12",
     "vitest": "^1.5.0"
   }
 }
