@@ -4,7 +4,18 @@ import AdmZip from 'adm-zip';
 
 const defaultExcludes = new Set(['.git', 'node_modules', 'out']);
 const excludedTopLevel = new Set(['tests', 'scripts']);
-const excludedFiles = new Set(['package-lock.json', 'vitest.config.js']);
+const excludedFiles = new Set([
+  'package-lock.json',
+  'vitest.config.js',
+  '.gitignore',
+  'README.md',
+  'TESTING.md',
+  'PRODUCTION-READY.md',
+  'SMOKE-TESTS.md',
+  'AGENTS.md',
+  'test-flashdoc.html',
+  'create-icons.html'
+]);
 const requiredFiles = [
   'manifest.json',
   'service-worker.js',
