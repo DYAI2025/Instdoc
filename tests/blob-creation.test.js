@@ -15,6 +15,13 @@ describe('Blob Creation Tests', () => {
           };
         }
 
+        if (extension === 'docx') {
+          return {
+            blob: new Blob(['DOCX_MOCK'], { type: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' }),
+            mimeType: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
+          };
+        }
+
         const mimeTypes = {
           'txt': 'text/plain;charset=utf-8',
           'md': 'text/markdown;charset=utf-8',
@@ -101,6 +108,11 @@ describe('Blob Creation Tests', () => {
     test('should map CSS to correct MIME type', () => {
       const result = flashDoc.createBlob('.class { color: red; }', 'css');
       expect(result.mimeType).toBe('text/css;charset=utf-8');
+    });
+
+    test('should map DOCX to correct MIME type', () => {
+      const result = flashDoc.createBlob('Document body', 'docx');
+      expect(result.mimeType).toBe('application/vnd.openxmlformats-officedocument.wordprocessingml.document');
     });
 
     test('should map JSON to correct MIME type', () => {
