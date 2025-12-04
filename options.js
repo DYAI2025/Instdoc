@@ -13,6 +13,7 @@ const CONTEXT_MENU_OPTIONS = [
   { id: 'sh', label: 'Shell (.sh)', description: 'Bash & shell scripts', emoji: '⚙️' },
   { id: 'yaml', label: 'YAML (.yaml)', description: 'Configs & workflows', emoji: '🧾' },
   { id: 'csv', label: 'CSV (.csv)', description: 'Spreadsheets and tables', emoji: '📊' },
+  { id: 'docx', label: 'Microsoft Word (.docx)', description: 'Send to Word with formatting', emoji: '📘' },
   { id: 'pdf', label: 'PDF (.pdf)', description: 'Portable documents', emoji: '📕' },
   { id: 'label', label: 'Label (89×28mm PDF)', description: 'Ready-to-print labels', emoji: '🏷️' },
   { id: 'saveas', label: 'Save As…', description: 'Pick folder & filename each time', emoji: '📁' }

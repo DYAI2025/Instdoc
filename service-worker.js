@@ -16,6 +16,7 @@ const CONTEXT_MENU_ITEMS = [
   { id: 'sh', title: '\u2699\uFE0F Save as .sh' },
   { id: 'yaml', title: '\uD83D\uDCE6 Save as .yaml' },
   { id: 'csv', title: '\uD83D\uDCCA Save as .csv' },
+  { id: 'docx', title: '\uD83D\uDCD8 Save as .docx' },
   { id: 'pdf', title: '\uD83D\uDCD5 Save as PDF' },
   { id: 'label', title: '\uD83C\uDFF7\uFE0F Label 89\u00D728 mm (PDF)' },
   { id: 'saveas', title: '\uD83D\uDCC1 Save As\u2026', saveAs: true }
@@ -350,6 +351,14 @@ class FlashDoc {
       return { blob: pdfBlob, mimeType: 'application/pdf' };
     }
 
+    if (extension === 'docx') {
+      const docxBlob = this.createDocxBlob(content);
+      return {
+        blob: docxBlob,
+        mimeType: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
+      };
+    }
+
     const mimeTypes = {
       'txt': 'text/plain;charset=utf-8',
       'md': 'text/markdown;charset=utf-8',
@@ -461,6 +470,165 @@ class FlashDoc {
     push('%%EOF\n');
 
     return new Blob(chunks, { type: 'application/pdf' });
+  }
+
+  createDocxBlob(content) {
+    const escapeXml = (value) => value
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;');
+
+    const paragraphs = content
+      .replace(/\r\n/g, '\n')
+      .split('\n')
+      .map(line => `<w:p><w:r><w:t xml:space="preserve">${escapeXml(line)}</w:t></w:r></w:p>`)
+      .join('');
+
+    const documentXml = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>` +
+      `<w:document xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main">` +
+      `<w:body>${paragraphs}<w:sectPr><w:pgSz w:w="12240" w:h="15840"/><w:pgMar w:top="1440" w:right="1440" w:bottom="1440" w:left="1440" w:header="720" w:footer="720" w:gutter="0"/></w:sectPr></w:body>` +
+      `</w:document>`;
+
+    const files = [
+      {
+        name: '[Content_Types].xml',
+        content: `<?xml version="1.0" encoding="UTF-8"?>` +
+          `<Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types">` +
+          `<Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/>` +
+          `<Default Extension="xml" ContentType="application/xml"/>` +
+          `<Override PartName="/word/document.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.document.main+xml"/>` +
+          `</Types>`
+      },
+      {
+        name: '_rels/.rels',
+        content: `<?xml version="1.0" encoding="UTF-8"?>` +
+          `<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">` +
+          `<Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="word/document.xml"/>` +
+          `</Relationships>`
+      },
+      {
+        name: 'word/document.xml',
+        content: documentXml
+      }
+    ];
+
+    return this.createZipBlob(files, 'application/vnd.openxmlformats-officedocument.wordprocessingml.document');
+  }
+
+  createZipBlob(files, mimeType) {
+    const encoder = new TextEncoder();
+    const toBytes = (value, byteCount) => {
+      const bytes = [];
+      for (let i = 0; i < byteCount; i++) {
+        bytes.push((value >> (i * 8)) & 0xff);
+      }
+      return bytes;
+    };
+
+    const entries = files.map(file => {
+      const data = encoder.encode(file.content);
+      const nameBytes = encoder.encode(file.name);
+      return {
+        ...file,
+        data,
+        nameBytes,
+        crc32: this.computeCrc32(data)
+      };
+    });
+
+    const bodyParts = [];
+    const centralDirectoryParts = [];
+    let offset = 0;
+
+    entries.forEach(entry => {
+      const localHeader = [
+        ...toBytes(0x04034b50, 4),
+        ...toBytes(20, 2),
+        ...toBytes(0, 2),
+        ...toBytes(0, 2),
+        ...toBytes(0, 2),
+        ...toBytes(0, 2),
+        ...toBytes(entry.crc32 >>> 0, 4),
+        ...toBytes(entry.data.length, 4),
+        ...toBytes(entry.data.length, 4),
+        ...toBytes(entry.nameBytes.length, 2),
+        ...toBytes(0, 2)
+      ];
+
+      const localHeaderBytes = new Uint8Array([...localHeader, ...entry.nameBytes]);
+      bodyParts.push(localHeaderBytes, entry.data);
+      const localOffset = offset;
+      offset += localHeaderBytes.length + entry.data.length;
+
+      const centralHeader = [
+        ...toBytes(0x02014b50, 4),
+        ...toBytes(20, 2),
+        ...toBytes(20, 2),
+        ...toBytes(0, 2),
+        ...toBytes(0, 2),
+        ...toBytes(0, 2),
+        ...toBytes(entry.crc32 >>> 0, 4),
+        ...toBytes(entry.data.length, 4),
+        ...toBytes(entry.data.length, 4),
+        ...toBytes(entry.nameBytes.length, 2),
+        ...toBytes(0, 2),
+        ...toBytes(0, 2),
+        ...toBytes(0, 2),
+        ...toBytes(0, 2),
+        ...toBytes(0, 4),
+        ...toBytes(localOffset, 4)
+      ];
+
+      const centralBytes = new Uint8Array([...centralHeader, ...entry.nameBytes]);
+      centralDirectoryParts.push(centralBytes);
+    });
+
+    const centralDirectorySize = centralDirectoryParts.reduce((total, part) => total + part.length, 0);
+    const centralDirectoryOffset = offset;
+
+    const endOfCentralDirectory = [
+      ...toBytes(0x06054b50, 4),
+      ...toBytes(0, 2),
+      ...toBytes(0, 2),
+      ...toBytes(entries.length, 2),
+      ...toBytes(entries.length, 2),
+      ...toBytes(centralDirectorySize, 4),
+      ...toBytes(centralDirectoryOffset, 4),
+      ...toBytes(0, 2)
+    ];
+
+    const zipParts = [
+      ...bodyParts,
+      ...centralDirectoryParts,
+      new Uint8Array(endOfCentralDirectory)
+    ];
+
+    return new Blob(zipParts, { type: mimeType });
+  }
+
+  computeCrc32(data) {
+    const table = this.crcTable || (this.crcTable = this.buildCrcTable());
+    let crc = 0 ^ (-1);
+
+    for (let i = 0; i < data.length; i++) {
+      const byte = data[i];
+      crc = (crc >>> 8) ^ table[(crc ^ byte) & 0xff];
+    }
+
+    return (crc ^ (-1)) >>> 0;
+  }
+
+  buildCrcTable() {
+    const table = new Uint32Array(256);
+    for (let n = 0; n < 256; n++) {
+      let c = n;
+      for (let k = 0; k < 8; k++) {
+        c = c & 1 ? 0xedb88320 ^ (c >>> 1) : c >>> 1;
+      }
+      table[n] = c >>> 0;
+    }
+    return table;
   }
 
   createLabelPdf(content) {
@@ -589,6 +757,7 @@ class FlashDoc {
   }
 
   detectContentType(content) {
+    if (this.isDocx(content)) return 'docx';
     // YAML detection
     if (this.isYAML(content)) return 'yaml';
 
@@ -627,6 +796,17 @@ class FlashDoc {
 
     // Default
     return 'txt';
+  }
+
+  isDocx(content) {
+    const trimmed = content.trim();
+    if (/^PK\u0003\u0004/.test(trimmed.slice(0, 4))) return true;
+    const wordMarkupPatterns = [
+      /<w:document[\s>]/,
+      /wordprocessingml\/.+main/,
+      /<w:body>/
+    ];
+    return wordMarkupPatterns.some(pattern => pattern.test(content));
   }
 
   isYAML(content) {

@@ -7,6 +7,16 @@ describe('Format Detection Tests', () => {
   beforeEach(() => {
     // Create a mock FlashDoc instance for testing
     flashDoc = {
+      isDocx: function(content) {
+        const trimmed = content.trim();
+        if (/^PK\u0003\u0004/.test(trimmed.slice(0, 4))) return true;
+        const wordMarkupPatterns = [
+          /<w:document[\s>]/,
+          /wordprocessingml\/.+main/,
+          /<w:body>/
+        ];
+        return wordMarkupPatterns.some(pattern => pattern.test(content));
+      },
       isYAML: function(content) {
         const yamlPatterns = [
           /^[\w-]+:\s+[\w\s]/m,
@@ -154,6 +164,20 @@ describe('Format Detection Tests', () => {
         });
       }
     };
+  });
+
+  describe('DOCX Detection', () => {
+    test('should detect WordprocessingML content', () => {
+      const wordXml = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+        <w:document xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main">
+          <w:body><w:p><w:r><w:t>Hello Word</w:t></w:r></w:p></w:body>
+        </w:document>`;
+      expect(flashDoc.isDocx(wordXml)).toBe(true);
+    });
+
+    test('should not detect plain text as docx', () => {
+      expect(flashDoc.isDocx('Just some plain text.')).toBe(false);
+    });
   });
 
   describe('TypeScript Detection', () => {
